@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<!--
+European Molecular Biology Laboratory, Heidelberg.
+Based an open-source graph theory library written in JavaScript. The library was developed at the Donnelly Centre at the University of Toronto. It is the successor of Cytoscape Web.
+Refer to http://js.cytoscape.org/ for details.
+--> 
+<meta name="robots" content="noindex">
+<html>
+<head>
+<meta name="description" content="DARET visualization" />
+<link rel="stylesheet" type="text/css" href="example.css">
+
+<!-- #dependencies for layout algorithms -->
+<script src="js-code/cola.v3.min.js"></script>
+<script src="js-code/jquery.min.js"></script>
+
+<meta charset=utf-8 />
+<title>DARET visualization</title>
+<!-- main library for network visualization.  -->
+  <script src="js-code/cytoscape.min.js"></script>
+<style id="jsbin-css">
+body { 
+  font: 14px helvetica neue, helvetica, arial, sans-serif;
+}
+
+</style>
+</head>
+<body>
+
+<!-- left panel, network visualization  -->
+<div style="width:100%;">
+<div style="float:left; width:80%;" id="cy"></div>
+
+
+<!-- Right panel  -->
+<div style="float:right; width:20%;" id="info"> <br>
+<!-- images created in illustrator. check ai files in images folder. exported to jpg.  -->
+<img src="images/labels1.jpg"  width="200" height="77" border="0"><br>
+			<!-- Multiple checkboxes to get subset of network   -->
+	    	&nbsp&nbsp&nbsp<input type="checkbox" id="stitch" value="Yes" checked>STITCH
+	    	<input type="checkbox" id="drugbank" value="Yes" checked>Drugbank
+	    	<input type="checkbox" id="ttd" value="Yes" checked>TTD<br><br>
+	    	<img src="images/labels2.jpg"  width="200" height="50" border="0"><br>
+	    	&nbsp&nbsp&nbsp<input type="checkbox" id="atc" value="Yes" checked>ATC
+	    	<input type="checkbox" id="ftc" value="Yes" checked>FTC<br><br>
+	    	<img src="images/labels3.jpg"  width="200" height="50" border="0"><br>
+	    	&nbsp&nbsp&nbsp<input type="checkbox" id="sideeffect" value="Yes" checked>Side effect
+	    	<input type="checkbox" id="toxicity" value="Yes" checked>Toxicity<br><br>
+	    	<!-- P value is log10(), which is changed with perl file as well.  -->
+	    	<input style="width: 100px" class="input-range" type="range" id="pval" size=5 value="-2" min="-50" max="-2"> 10^(<span class="range-value"></span>) P value <br> 
+ 	   <input style="width: 100px" class="input-range2" type="range" id="odds" size=5 value="3" min="3" max="250">  <span class="range-value2"></span> Odds Ratio <br> 
+ 	   		<!-- button for subsetting the network.  -->
+  	    	<button style="height:30px; width:90px" id="redraw-button">Redraw</button><br><br>
+
+
+<h2>Layout</h2>
+			<!-- multiple layout algorithm names/options  -->
+	    	<select id="layout-select">
+	    		<option value="grid">Grid</option>
+	    		<option value="cose" selected>Cose</option>
+	    		<option value="cola">Cola</option>
+	    		<option value="circle">Circle</option>
+	    		<option value="breadthfirst">Breadth first</option>
+	    		<option value="null">Null</option>
+	    	</select>
+	    	<!-- action button for layout  -->
+	    	<button style="height:30px; width:90px" id="layout-button">Apply</button>
+
+ </div>
+</div>
+
+
+<script id="jsbin-javascript">
+<!-- ####################################################################################  -->
+
+<!-- this part is just to print back the value of range inputs, on the right side.  -->
+
+var range = $('.input-range'),
+    value = $('.range-value');
+var range2 = $('.input-range2'),
+    value2 = $('.range-value2');
+
+value.html(range.attr('value'));    
+range.on('input', function(){
+    value.html(this.value);
+}); 
+value2.html(range2.attr('value'));
+range2.on('input', function(){
+    value2.html(this.value);
+}); 
+
+<!-- end of this panel.  -->
+<!-- ####################################################################################  -->
+
+
+$(function(){ // on dom ready
+var wholenetwork = {
+    nodes: [
+
+<!-- Here, we fill in the network usign perl/python. -->{ data: { id: 'galactorrheadrug-side-effects', label: 'Galactorrhoea', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0235660', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -3.38130774172613, odds: 14.597561 } },
+{ data: { id: 'ensp00000285979STITCH-drug-targets', label: 'CPCI', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000285979?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -1.68424790563547, odds: 113.538333 } },
+{ data: { id: 'ensp00000263025STITCH-drug-targets', label: 'ERK1', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000263025?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -4.66059825198063, odds: 48.427350 } },
+{ data: { id: 'ensp00000291295STITCH-drug-targets', label: 'CALM3', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000291295?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -5.22116961004039, odds: 621.346505 } },
+{ data: { id: 'ensp00000316244STITCH-drug-targets', label: '5-HT1A', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000316244?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -7.23971174637687, odds: 15.613464 } },
+{ data: { id: 'malignant syndromedrug-side-effects', label: 'Neuroleptic malignant syndrome', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0027849', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -3.04710831481894, odds: 15.175758 } },
+{ data: { id: 'ensp00000354859STITCH-drug-targets', label: 'D2DR', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000354859?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -10.3053237405106, odds: 21.816390 } },
+{ data: { id: 'ensp00000351035STITCH-drug-targets', label: '17BHSD11', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000351035?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -1.40071968409012, odds: 10000 } },
+{ data: { id: 'neuroleptic malignantdrug-side-effects', label: 'Neuroleptic malignant syndrome', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0027849', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -3.02833828319395, odds: 14.713725 } },
+{ data: { id: 'n05adrug-ATC-code', label: 'Antipsychotics', faveColor: '#D0F5A9', href:'http://en.wikipedia.org/wiki/ATC_code_N05A', faveShape: 'rectangle', weight:30, db: 'drug-ATC-code', pval: -3.38056750927644, odds: 12.201681 } },
+{ data: { id: 'obstipationdrug-side-effects', label: 'Constipation', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0009806', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -2.55631622468975, odds: 68.000000 } },
+{ data: { id: 'ensp00000258400STITCH-drug-targets', label: '5-HT(2B)', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000258400?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -4.13524454873532, odds: 36.825474 } },
+{ data: { id: 'ensp00000386069STITCH-drug-targets', label: 'ADRA2C', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000386069?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -7.48671046753972, odds: 58.380009 } },
+{ data: { id: 'n06adrug-ATC-code', label: 'Antidepressants', faveColor: '#D0F5A9', href:'http://en.wikipedia.org/wiki/ATC_code_N06A', faveShape: 'rectangle', weight:30, db: 'drug-ATC-code', pval: -1.78721864417723, odds: 8.800936 } },
+{ data: { id: 'ensp00000256958STITCH-drug-targets', label: 'LST-1', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000256958?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -1.43778329248581, odds: 81.086905 } },
+{ data: { id: 'ensp00000226021STITCH-drug-targets', label: 'CACNG1', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000226021?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -3.41430808432446, odds: 1135.758333 } },
+{ data: { id: 'ensp00000331108STITCH-drug-targets', label: 'CHRM5', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000331108?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -15.7348801641258, odds: 127.010868 } },
+{ data: { id: 'positive pregnancy testsdrug-side-effects', label: 'Pregnancy test positive', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0240802', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -2.55631622468975, odds: 68.000000 } },
+{ data: { id: 'ensp00000301141STITCH-drug-targets', label: 'CPA6', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000301141?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -4.04750687299726, odds: 68.026987 } },
+{ data: { id: 'ensp00000319984STITCH-drug-targets', label: 'CHRM2', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000319984?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -9.5531072795249, odds: 39.602632 } },
+{ data: { id: 'ensp00000369237STITCH-drug-targets', label: 'NAT1', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000369237?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -4.08533692643877, odds: 16.697180 } },
+{ data: { id: 'ensp00000262186STITCH-drug-targets', label: 'ERG1', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000262186?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -14.2150861477167, odds: 191.566604 } },
+{ data: { id: 'ensp00000349467STITCH-drug-targets', label: 'CALM1', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000349467?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -5.08289115562005, odds: 543.670213 } },
+{ data: { id: 'ensp00000367959STITCH-drug-targets', label: '5-HT2A', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000367959?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -17.0947509734828, odds: 44.235066 } },
+{ data: { id: 'ensp00000334198STITCH-drug-targets', label: 'CACNA1H', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000334198?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -2.48490673372356, odds: 315.458333 } },
+{ data: { id: 'ensp00000347299STITCH-drug-targets', label: 'H1-R', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000347299?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -16.3861867093555, odds: 53.959298 } },
+{ data: { id: 'ensp00000306490STITCH-drug-targets', label: 'CHRM1', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000306490?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -12.8356798662654, odds: 50.923308 } },
+{ data: { id: 'ensp00000342007STITCH-drug-targets', label: 'CP12', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000342007?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -19.411266785357, odds: 114.090593 } },
+{ data: { id: 'paralytic ileusdrug-side-effects', label: 'Ileus paralytic', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0030446', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -4.50115070386097, odds: 25.392857 } },
+{ data: { id: 'extrapyramidal symptomsdrug-side-effects', label: 'Extrapyramidal disorder', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0015371', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -3.42829349685429, odds: 15.800752 } },
+{ data: { id: 'ensp00000313661STITCH-drug-targets', label: '5-HT1D', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000313661?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -2.72371516666774, odds: 18.200860 } },
+{ data: { id: 'ensp00000311032STITCH-drug-targets', label: 'CASP3', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000311032?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -7.22207971091856, odds: 36.477805 } },
+{ data: { id: 'testicular swellingdrug-side-effects', label: 'Testicular swelling', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C2584688', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -1.82262512808909, odds: 29.022556 } },
+{ data: { id: 'parotid swellingdrug-side-effects', label: 'Parotid gland enlargement', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0341047', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -4.50115070386097, odds: 85.411765 } },
+{ data: { id: 'abnormal electroencephalogramdrug-side-effects', label: 'Electroencephalogram abnormal', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0151611', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -2.05583329329258, odds: 20.491453 } },
+{ data: { id: 'ensp00000355930STITCH-drug-targets', label: 'HOCT1', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000355930?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -5.22116961004039, odds: 146.231884 } },
+{ data: { id: 'ensp00000353820STITCH-drug-targets', label: 'CPD6', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000353820?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -32.1204895299322, odds: 241.521178 } },
+{ data: { id: 'ensp00000305974STITCH-drug-targets', label: 'OATP', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000305974?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -1.486005096029, odds: 88.692708 } },
+{ data: { id: 'ensp00000307766STITCH-drug-targets', label: '5-HT1E', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000307766?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -7.54442583319591, odds: 210.222222 } },
+{ data: { id: 'ensp00000222982STITCH-drug-targets', label: 'CP35', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000222982?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -11.6673232484986, odds: 146.482647 } },
+{ data: { id: 'ensp00000003100STITCH-drug-targets', label: 'CP51', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000003100?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -3.94756386469739, odds: 193.263830 } },
+{ data: { id: 'ensp00000373169STITCH-drug-targets', label: 'D3DR', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000373169?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -6.10833154898687, odds: 16.290777 } },
+{ data: { id: 'ensp00000260682STITCH-drug-targets', label: 'CPC9', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000260682?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -21.0403581693669, odds: 152.801863 } },
+{ data: { id: 'ensp00000302150STITCH-drug-targets', label: 'PRL', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000302150?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -1.94157777184002, odds: 157.708333 } },
+{ data: { id: 'ensp00000298700STITCH-drug-targets', label: 'CASP7', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000298700?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -2.22616091645358, odds: 22.317252 } },
+{ data: { id: 'ensp00000360372STITCH-drug-targets', label: 'CPCJ', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000360372?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -17.5384534543672, odds: 139.427204 } },
+{ data: { id: 'ensp00000264381STITCH-drug-targets', label: 'BCHE', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000264381?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -1.85537287083936, odds: 11.619330 } },
+{ data: { id: 'gynecomastiadrug-side-effects', label: 'Gynaecomastia', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0018418', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -2.02234908797631, odds: 6.764368 } },
+{ data: { id: 'ensp00000255380STITCH-drug-targets', label: 'CHRM3', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000255380?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -12.9466948601673, odds: 52.365780 } },
+{ data: { id: 'ensp00000259396STITCH-drug-targets', label: 'AGP-A', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000259396?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -14.2150861477167, odds: 672.192389 } },
+{ data: { id: 'motor restlessnessdrug-side-effects', label: 'Akathisia', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0392156', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -3.38130774172613, odds: 67.222222 } },
+{ data: { id: 'ensp00000338018STITCH-drug-targets', label: 'HIF-1alpha', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000338018?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -1.4676482623079, odds: 84.719527 } },
+{ data: { id: 'mydriasisdrug-side-effects', label: 'Mydriasis', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0026961', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -1.44787225099859, odds: 6.979710 } },
+{ data: { id: 'ensp00000264708STITCH-drug-targets', label: 'ACTH', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000264708?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -1.486005096029, odds: 87.327564 } },
+{ data: { id: 'ensp00000265724STITCH-drug-targets', label: 'ABC20', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000265724?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -25.7894995587944, odds: 197.490196 } },
+{ data: { id: 'systemic lupus erythematosusdrug-side-effects', label: 'Systemic lupus erythematosus', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0024141', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -1.31412485945986, odds: 8.918919 } },
+{ data: { id: 'ensp00000280155STITCH-drug-targets', label: 'ADRA2', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000280155?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -6.08708267230081, odds: 34.888901 } },
+{ data: { id: 'ileusdrug-side-effects', label: 'Ileus', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C1258215', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -1.83989478343456, odds: 7.368132 } },
+{ data: { id: 'ensp00000276198STITCH-drug-targets', label: '5-HT2C', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000276198?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -11.223398322969, odds: 36.377171 } },
+{ data: { id: 'protrusion of the tonguedrug-side-effects', label: 'Protrusion tongue', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0241442', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -2.63039085734106, odds: 21.088235 } },
+{ data: { id: 'ensp00000387281STITCH-drug-targets', label: 'ADRA2B', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000387281?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -8.88790801010777, odds: 95.473937 } },
+{ data: { id: 'false positive pregnancy testsdrug-side-effects', label: 'Pregnancy test false positive', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0151865', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -1.63535333907715, odds: 72.750000 } },
+{ data: { id: 'ensp00000215832STITCH-drug-targets', label: 'ERK', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000215832?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -4.54640954656488, odds: 45.641155 } },
+{ data: { id: 'ensp00000409378STITCH-drug-targets', label: 'CHRM4', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000409378?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -13.7585556304534, odds: 80.991652 } },
+{ data: { id: 'ensp00000327652STITCH-drug-targets', label: 'DADR', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000327652?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -11.6537585479097, odds: 39.834250 } },
+{ data: { id: 'ensp00000306662STITCH-drug-targets', label: 'ADRA1', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000306662?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -4.47913408967314, odds: 27.195722 } },
+{ data: { id: 'ensp00000324648STITCH-drug-targets', label: 'CPB6', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000324648?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -9.20603858444397, odds: 107.024267 } },
+{ data: { id: 'ensp00000252945STITCH-drug-targets', label: 'CPE1', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000252945?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -6.90062671889093, odds: 75.109864 } },
+{ data: { id: 'ensp00000289753STITCH-drug-targets', label: '5-HT6', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000289753?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -7.00116939081336, odds: 48.494492 } },
+{ data: { id: 'ensp00000268053STITCH-drug-targets', label: 'CYP11A', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000268053?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -4.47913408967314, odds: 310.641337 } },
+{ data: { id: 'ensp00000354612STITCH-drug-targets', label: 'COX1', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000354612?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -1.94157777184002, odds: 37.597403 } },
+{ data: { id: 'ensp00000358784STITCH-drug-targets', label: 'HGK5', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000358784?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -1.486005096029, odds: 87.327564 } },
+{ data: { id: 'hypomaniadrug-side-effects', label: 'Hypomania', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0241934', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -2.15831399279566, odds: 22.222222 } },
+{ data: { id: 'adenitisdrug-side-effects', label: 'Lymphadenitis', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0024205', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -1.40460740394068, odds: 48.450000 } },
+{ data: { id: 'ensp00000337450STITCH-drug-targets', label: 'CP37', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000337450?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -8.21049825764794, odds: 131.677950 } },
+{ data: { id: 'ensp00000306129STITCH-drug-targets', label: 'DBDR', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000306129?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -3.2667842717497, odds: 23.775324 } },
+{ data: { id: 'ensp00000261707STITCH-drug-targets', label: '5-HTT', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000261707?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -5.02771799574894, odds: 18.002336 } },
+{ data: { id: 'hyperpyrexiadrug-side-effects', label: 'Hyperpyrexia', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0392676', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -2.34317666214773, odds: 16.800000 } },
+{ data: { id: 'ensp00000263817STITCH-drug-targets', label: 'ABC16', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000263817?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -7.03064699966503, odds: 159.299415 } },
+{ data: { id: 'ensp00000337915STITCH-drug-targets', label: 'CP33', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000337915?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -32.4646894201284, odds: 151.763736 } },
+{ data: { id: 'ensp00000295897STITCH-drug-targets', label: 'ALB', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000295897?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -6.21337420079801, odds: 105.790987 } },
+{ data: { id: 'n06aadrug-ATC-code', label: 'Non-selective monoamine reupta', faveColor: '#D0F5A9', href:'http://en.wikipedia.org/wiki/ATC_code_N06AA', faveShape: 'rectangle', weight:30, db: 'drug-ATC-code', pval: -3.38056750927644, odds: 25.852632 } },
+{ data: { id: 'ensp00000360317STITCH-drug-targets', label: 'CPC8', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000360317?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -16.8618678946216, odds: 165.418214 } },
+{ data: { id: 'pseudoparkinsonismdrug-side-effects', label: 'Parkinsonism', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0242422', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -1.40460740394068, odds: 48.450000 } },
+{ data: { id: 'siadhdrug-side-effects', label: 'Inappropriate antidiuretic hor', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0021141', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -1.91798340077365, odds: 10.193750 } },
+{ data: { id: 'peculiar tastedrug-side-effects', label: 'Dysgeusia', faveColor: '#F79F81', href:'http://sideeffects.embl.de/se/C0013378', faveShape: 'triangle', weight:30, db: 'drug-side-effects', pval: -2.55631622468975, odds: 68.000000 } },
+{ data: { id: 'ensp00000369960STITCH-drug-targets', label: 'ADRA1A', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000369960?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -9.20603858444397, odds: 23.864459 } },
+{ data: { id: 'ensp00000337949STITCH-drug-targets', label: '5-HT7', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000337949?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -4.39989547238862, odds: 18.768712 } },
+{ data: { id: 'ensp00000272298STITCH-drug-targets', label: 'C2orf61', faveColor: '#A9A9F5', href:'http://stitch.embl.de/interactions/ENSP00000272298?species=9606', faveShape: 'ellipse', weight:30, db: 'STITCH-drug-targets', pval: -5.02771799574894, odds: 511.685857 } },
+{ data: { id: 'cid000001027', label: 'pregnenolone', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000001027?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000005422', label: 'tetrandrine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000005422?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000003386', label: 'fluoxetine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000003386?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000003954', label: 'loperamide', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000003954?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000002170', label: 'amoxapine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000002170?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000002909', label: 'ciclosporin', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000002909?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004748', label: 'perphenazine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004748?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000002247', label: 'astemizole', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000002247?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000000225', label: 'etiocholanolone', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000000225?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000002995', label: 'desipramine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000002995?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000003198', label: 'econazole', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000003198?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004919', label: 'procyclidine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004919?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004409', label: 'nabumetone', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004409?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000003460', label: 'geldanamycin', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000003460?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000005440', label: 'thiethylperazine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000005440?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000003823', label: 'ketoconazole', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000003823?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000016362', label: 'pimozide', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000016362?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004080', label: 'mestranol', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004080?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000002726', label: 'chlorpromazine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000002726?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004984', label: 'puromycin', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004984?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000060787', label: 'saquinavir', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000060787?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000005452', label: 'thioridazine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000005452?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000002729', label: 'chlorprothixene', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000002729?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004976', label: 'protriptyline', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004976?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004167', label: 'metixene', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004167?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000002165', label: 'amodiaquine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000002165?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000074989', label: 'atovaquone', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000074989?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000005584', label: 'trimipramine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000005584?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004746', label: 'perhexiline', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004746?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000005035', label: 'raloxifene', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000005035?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004932', label: 'propafenone', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004932?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004011', label: 'maprotiline', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004011?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004917', label: 'prochlorperazine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004917?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004106', label: 'metitepine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004106?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000123620', label: 'mometasone', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000123620?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000009429', label: 'thioproperazine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000009429?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000005404', label: 'terconazole', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000005404?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004543', label: 'nortriptyline', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004543?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004090', label: 'metergoline', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004090?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000003396', label: 'fluspirilene', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000003396?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004926', label: 'promazine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004926?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000004507', label: 'nitrendipine', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000004507?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+{ data: { id: 'cid000002749', label: 'ciclopirox', faveColor: '#848484', href:'http://stitch.embl.de/interactions/CID000002749?species=9606', faveShape: 'roundrectangle', weight:60, db: 'unfiltered', pval: -10000, odds: 10000 } },
+   ],
+    edges: [
+{ data: { source: 'n05adrug-ATC-code', target: 'cid000002729' } },
+{ data: { source: 'n05adrug-ATC-code', target: 'cid000002726' } },
+{ data: { source: 'n06aadrug-ATC-code', target: 'cid000004976' } },
+{ data: { source: 'n06adrug-ATC-code', target: 'cid000004976' } },
+{ data: { source: 'n05adrug-ATC-code', target: 'cid000004917' } },
+{ data: { source: 'n06aadrug-ATC-code', target: 'cid000004543' } },
+{ data: { source: 'n06adrug-ATC-code', target: 'cid000004543' } },
+{ data: { source: 'n05adrug-ATC-code', target: 'cid000016362' } },
+{ data: { source: 'n06aadrug-ATC-code', target: 'cid000002995' } },
+{ data: { source: 'n06adrug-ATC-code', target: 'cid000002995' } },
+{ data: { source: 'n05adrug-ATC-code', target: 'cid000009429' } },
+{ data: { source: 'n05adrug-ATC-code', target: 'cid000003396' } },
+{ data: { source: 'n06adrug-ATC-code', target: 'cid000003386' } },
+{ data: { source: 'n06aadrug-ATC-code', target: 'cid000002170' } },
+{ data: { source: 'n06adrug-ATC-code', target: 'cid000002170' } },
+{ data: { source: 'n05adrug-ATC-code', target: 'cid000004926' } },
+{ data: { source: 'n05adrug-ATC-code', target: 'cid000004748' } },
+{ data: { source: 'n05adrug-ATC-code', target: 'cid000005452' } },
+{ data: { source: 'n06aadrug-ATC-code', target: 'cid000005584' } },
+{ data: { source: 'n06adrug-ATC-code', target: 'cid000005584' } },
+{ data: { source: 'n06aadrug-ATC-code', target: 'cid000004011' } },
+{ data: { source: 'n06adrug-ATC-code', target: 'cid000004011' } },
+{ data: { source: 'ensp00000351035STITCH-drug-targets', target: 'cid000000225' } },
+{ data: { source: 'ensp00000258400STITCH-drug-targets', target: 'cid000002729' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000002729' } },
+{ data: { source: 'ensp00000409378STITCH-drug-targets', target: 'cid000002729' } },
+{ data: { source: 'ensp00000319984STITCH-drug-targets', target: 'cid000002729' } },
+{ data: { source: 'ensp00000373169STITCH-drug-targets', target: 'cid000002729' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000002729' } },
+{ data: { source: 'ensp00000276198STITCH-drug-targets', target: 'cid000002729' } },
+{ data: { source: 'ensp00000354859STITCH-drug-targets', target: 'cid000002729' } },
+{ data: { source: 'ensp00000331108STITCH-drug-targets', target: 'cid000002729' } },
+{ data: { source: 'ensp00000302150STITCH-drug-targets', target: 'cid000002729' } },
+{ data: { source: 'ensp00000255380STITCH-drug-targets', target: 'cid000002729' } },
+{ data: { source: 'ensp00000327652STITCH-drug-targets', target: 'cid000002729' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000002729' } },
+{ data: { source: 'ensp00000306490STITCH-drug-targets', target: 'cid000002729' } },
+{ data: { source: 'ensp00000342007STITCH-drug-targets', target: 'cid000002165' } },
+{ data: { source: 'ensp00000260682STITCH-drug-targets', target: 'cid000002165' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000002165' } },
+{ data: { source: 'ensp00000360372STITCH-drug-targets', target: 'cid000002165' } },
+{ data: { source: 'ensp00000360317STITCH-drug-targets', target: 'cid000002165' } },
+{ data: { source: 'ensp00000311032STITCH-drug-targets', target: 'cid000004932' } },
+{ data: { source: 'ensp00000342007STITCH-drug-targets', target: 'cid000004932' } },
+{ data: { source: 'ensp00000260682STITCH-drug-targets', target: 'cid000004932' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000004932' } },
+{ data: { source: 'ensp00000298700STITCH-drug-targets', target: 'cid000004932' } },
+{ data: { source: 'ensp00000262186STITCH-drug-targets', target: 'cid000004932' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000004932' } },
+{ data: { source: 'ensp00000360317STITCH-drug-targets', target: 'cid000004932' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000004932' } },
+{ data: { source: 'ensp00000311032STITCH-drug-targets', target: 'cid000002909' } },
+{ data: { source: 'ensp00000256958STITCH-drug-targets', target: 'cid000002909' } },
+{ data: { source: 'ensp00000263817STITCH-drug-targets', target: 'cid000002909' } },
+{ data: { source: 'ensp00000222982STITCH-drug-targets', target: 'cid000002909' } },
+{ data: { source: 'ensp00000263025STITCH-drug-targets', target: 'cid000002909' } },
+{ data: { source: 'ensp00000215832STITCH-drug-targets', target: 'cid000002909' } },
+{ data: { source: 'ensp00000298700STITCH-drug-targets', target: 'cid000002909' } },
+{ data: { source: 'ensp00000337450STITCH-drug-targets', target: 'cid000002909' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000002909' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000002909' } },
+{ data: { source: 'ensp00000263025STITCH-drug-targets', target: 'cid000005035' } },
+{ data: { source: 'ensp00000215832STITCH-drug-targets', target: 'cid000005035' } },
+{ data: { source: 'ensp00000302150STITCH-drug-targets', target: 'cid000005035' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000005035' } },
+{ data: { source: 'ensp00000324648STITCH-drug-targets', target: 'cid000005035' } },
+{ data: { source: 'ensp00000360317STITCH-drug-targets', target: 'cid000005035' } },
+{ data: { source: 'ensp00000369960STITCH-drug-targets', target: 'cid000003954' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000003954' } },
+{ data: { source: 'ensp00000264708STITCH-drug-targets', target: 'cid000003954' } },
+{ data: { source: 'ensp00000386069STITCH-drug-targets', target: 'cid000003954' } },
+{ data: { source: 'ensp00000280155STITCH-drug-targets', target: 'cid000003954' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000003954' } },
+{ data: { source: 'ensp00000324648STITCH-drug-targets', target: 'cid000003954' } },
+{ data: { source: 'ensp00000360317STITCH-drug-targets', target: 'cid000003954' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000003954' } },
+{ data: { source: 'ensp00000259396STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000306662STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000301141STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000409378STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000319984STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000355930STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000263817STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000337949STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000307766STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000316244STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000342007STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000369960STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000291295STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000373169STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000264381STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000276198STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000354859STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000252945STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000260682STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000349467STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000331108STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000262186STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000386069STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000280155STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000255380STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000313661STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000289753STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000327652STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000360372STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000306129STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000295897STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000272298STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000387281STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000306490STITCH-drug-targets', target: 'cid000002726' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000004976' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000004976' } },
+{ data: { source: 'ensp00000261707STITCH-drug-targets', target: 'cid000004976' } },
+{ data: { source: 'ensp00000369237STITCH-drug-targets', target: 'cid000004976' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000004976' } },
+{ data: { source: 'ensp00000342007STITCH-drug-targets', target: 'cid000004409' } },
+{ data: { source: 'ensp00000354612STITCH-drug-targets', target: 'cid000004409' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000004917' } },
+{ data: { source: 'ensp00000337949STITCH-drug-targets', target: 'cid000004917' } },
+{ data: { source: 'ensp00000373169STITCH-drug-targets', target: 'cid000004917' } },
+{ data: { source: 'ensp00000264381STITCH-drug-targets', target: 'cid000004917' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000004917' } },
+{ data: { source: 'ensp00000276198STITCH-drug-targets', target: 'cid000004917' } },
+{ data: { source: 'ensp00000354859STITCH-drug-targets', target: 'cid000004917' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000004917' } },
+{ data: { source: 'ensp00000327652STITCH-drug-targets', target: 'cid000004917' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000004917' } },
+{ data: { source: 'ensp00000306129STITCH-drug-targets', target: 'cid000004917' } },
+{ data: { source: 'ensp00000263817STITCH-drug-targets', target: 'cid000004507' } },
+{ data: { source: 'ensp00000222982STITCH-drug-targets', target: 'cid000004507' } },
+{ data: { source: 'ensp00000337450STITCH-drug-targets', target: 'cid000004507' } },
+{ data: { source: 'ensp00000226021STITCH-drug-targets', target: 'cid000004507' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000004507' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000004507' } },
+{ data: { source: 'ensp00000334198STITCH-drug-targets', target: 'cid000004507' } },
+{ data: { source: 'ensp00000338018STITCH-drug-targets', target: 'cid000002749' } },
+{ data: { source: 'ensp00000354612STITCH-drug-targets', target: 'cid000002749' } },
+{ data: { source: 'ensp00000409378STITCH-drug-targets', target: 'cid000004919' } },
+{ data: { source: 'ensp00000319984STITCH-drug-targets', target: 'cid000004919' } },
+{ data: { source: 'ensp00000331108STITCH-drug-targets', target: 'cid000004919' } },
+{ data: { source: 'ensp00000255380STITCH-drug-targets', target: 'cid000004919' } },
+{ data: { source: 'ensp00000306490STITCH-drug-targets', target: 'cid000004919' } },
+{ data: { source: 'ensp00000259396STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000311032STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000409378STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000319984STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000222982STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000316244STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000342007STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000369960STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000252945STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000260682STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000298700STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000331108STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000261707STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000255380STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000360372STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000369237STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000306129STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000360317STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000295897STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000306490STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000354612STITCH-drug-targets', target: 'cid000004543' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000005422' } },
+{ data: { source: 'ensp00000259396STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000256958STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000355930STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000263817STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000222982STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000268053STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000260682STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000305974STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000337450STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000360372STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000360317STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000295897STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000060787' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000002247' } },
+{ data: { source: 'ensp00000222982STITCH-drug-targets', target: 'cid000002247' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000002247' } },
+{ data: { source: 'ensp00000262186STITCH-drug-targets', target: 'cid000002247' } },
+{ data: { source: 'ensp00000337450STITCH-drug-targets', target: 'cid000002247' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000002247' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000002247' } },
+{ data: { source: 'ensp00000003100STITCH-drug-targets', target: 'cid000003198' } },
+{ data: { source: 'ensp00000252945STITCH-drug-targets', target: 'cid000003198' } },
+{ data: { source: 'ensp00000358784STITCH-drug-targets', target: 'cid000003198' } },
+{ data: { source: 'ensp00000262186STITCH-drug-targets', target: 'cid000003198' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000003198' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000222982STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000337949STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000316244STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000342007STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000369960STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000291295STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000373169STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000276198STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000354859STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000252945STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000349467STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000262186STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000337450STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000386069STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000289753STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000360372STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000272298STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000387281STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000334198STITCH-drug-targets', target: 'cid000016362' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000005440' } },
+{ data: { source: 'ensp00000409378STITCH-drug-targets', target: 'cid000005440' } },
+{ data: { source: 'ensp00000319984STITCH-drug-targets', target: 'cid000005440' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000005440' } },
+{ data: { source: 'ensp00000276198STITCH-drug-targets', target: 'cid000005440' } },
+{ data: { source: 'ensp00000354859STITCH-drug-targets', target: 'cid000005440' } },
+{ data: { source: 'ensp00000331108STITCH-drug-targets', target: 'cid000005440' } },
+{ data: { source: 'ensp00000255380STITCH-drug-targets', target: 'cid000005440' } },
+{ data: { source: 'ensp00000327652STITCH-drug-targets', target: 'cid000005440' } },
+{ data: { source: 'ensp00000306490STITCH-drug-targets', target: 'cid000005440' } },
+{ data: { source: 'ensp00000259396STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000311032STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000301141STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000409378STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000319984STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000355930STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000263025STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000316244STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000342007STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000369960STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000252945STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000215832STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000260682STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000331108STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000262186STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000261707STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000386069STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000280155STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000255380STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000360372STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000369237STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000324648STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000285979STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000387281STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000306490STITCH-drug-targets', target: 'cid000002995' } },
+{ data: { source: 'ensp00000258400STITCH-drug-targets', target: 'cid000004106' } },
+{ data: { source: 'ensp00000306662STITCH-drug-targets', target: 'cid000004106' } },
+{ data: { source: 'ensp00000337949STITCH-drug-targets', target: 'cid000004106' } },
+{ data: { source: 'ensp00000307766STITCH-drug-targets', target: 'cid000004106' } },
+{ data: { source: 'ensp00000316244STITCH-drug-targets', target: 'cid000004106' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000004106' } },
+{ data: { source: 'ensp00000276198STITCH-drug-targets', target: 'cid000004106' } },
+{ data: { source: 'ensp00000354859STITCH-drug-targets', target: 'cid000004106' } },
+{ data: { source: 'ensp00000313661STITCH-drug-targets', target: 'cid000004106' } },
+{ data: { source: 'ensp00000289753STITCH-drug-targets', target: 'cid000004106' } },
+{ data: { source: 'ensp00000327652STITCH-drug-targets', target: 'cid000004106' } },
+{ data: { source: 'ensp00000409378STITCH-drug-targets', target: 'cid000004167' } },
+{ data: { source: 'ensp00000319984STITCH-drug-targets', target: 'cid000004167' } },
+{ data: { source: 'ensp00000331108STITCH-drug-targets', target: 'cid000004167' } },
+{ data: { source: 'ensp00000255380STITCH-drug-targets', target: 'cid000004167' } },
+{ data: { source: 'ensp00000306490STITCH-drug-targets', target: 'cid000004167' } },
+{ data: { source: 'ensp00000268053STITCH-drug-targets', target: 'cid000001027' } },
+{ data: { source: 'ensp00000264708STITCH-drug-targets', target: 'cid000001027' } },
+{ data: { source: 'ensp00000306662STITCH-drug-targets', target: 'cid000009429' } },
+{ data: { source: 'ensp00000355930STITCH-drug-targets', target: 'cid000009429' } },
+{ data: { source: 'ensp00000316244STITCH-drug-targets', target: 'cid000009429' } },
+{ data: { source: 'ensp00000369960STITCH-drug-targets', target: 'cid000009429' } },
+{ data: { source: 'ensp00000373169STITCH-drug-targets', target: 'cid000009429' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000009429' } },
+{ data: { source: 'ensp00000354859STITCH-drug-targets', target: 'cid000009429' } },
+{ data: { source: 'ensp00000327652STITCH-drug-targets', target: 'cid000009429' } },
+{ data: { source: 'ensp00000295897STITCH-drug-targets', target: 'cid000009429' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000003396' } },
+{ data: { source: 'ensp00000307766STITCH-drug-targets', target: 'cid000003396' } },
+{ data: { source: 'ensp00000316244STITCH-drug-targets', target: 'cid000003396' } },
+{ data: { source: 'ensp00000373169STITCH-drug-targets', target: 'cid000003396' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000003396' } },
+{ data: { source: 'ensp00000354859STITCH-drug-targets', target: 'cid000003396' } },
+{ data: { source: 'ensp00000386069STITCH-drug-targets', target: 'cid000003396' } },
+{ data: { source: 'ensp00000280155STITCH-drug-targets', target: 'cid000003396' } },
+{ data: { source: 'ensp00000313661STITCH-drug-targets', target: 'cid000003396' } },
+{ data: { source: 'ensp00000226021STITCH-drug-targets', target: 'cid000003396' } },
+{ data: { source: 'ensp00000387281STITCH-drug-targets', target: 'cid000003396' } },
+{ data: { source: 'ensp00000259396STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000258400STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000311032STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000222982STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000263025STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000316244STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000342007STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000276198STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000215832STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000260682STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000358784STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000298700STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000262186STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000261707STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000255380STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000360372STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000324648STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000360317STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000295897STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000306490STITCH-drug-targets', target: 'cid000003386' } },
+{ data: { source: 'ensp00000301141STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000003100STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000263817STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000222982STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000342007STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000268053STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000260682STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000305974STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000337450STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000360372STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000324648STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000360317STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000003823' } },
+{ data: { source: 'ensp00000259396STITCH-drug-targets', target: 'cid000002170' } },
+{ data: { source: 'ensp00000369960STITCH-drug-targets', target: 'cid000002170' } },
+{ data: { source: 'ensp00000373169STITCH-drug-targets', target: 'cid000002170' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000002170' } },
+{ data: { source: 'ensp00000276198STITCH-drug-targets', target: 'cid000002170' } },
+{ data: { source: 'ensp00000354859STITCH-drug-targets', target: 'cid000002170' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000002170' } },
+{ data: { source: 'ensp00000261707STITCH-drug-targets', target: 'cid000002170' } },
+{ data: { source: 'ensp00000280155STITCH-drug-targets', target: 'cid000002170' } },
+{ data: { source: 'ensp00000289753STITCH-drug-targets', target: 'cid000002170' } },
+{ data: { source: 'ensp00000327652STITCH-drug-targets', target: 'cid000002170' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000002170' } },
+{ data: { source: 'ensp00000369237STITCH-drug-targets', target: 'cid000002170' } },
+{ data: { source: 'ensp00000306490STITCH-drug-targets', target: 'cid000002170' } },
+{ data: { source: 'ensp00000311032STITCH-drug-targets', target: 'cid000004984' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000004984' } },
+{ data: { source: 'ensp00000360317STITCH-drug-targets', target: 'cid000123620' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000306662STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000409378STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000319984STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000342007STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000369960STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000373169STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000264381STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000276198STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000354859STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000260682STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000331108STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000255380STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000327652STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000360372STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000306490STITCH-drug-targets', target: 'cid000004926' } },
+{ data: { source: 'ensp00000260682STITCH-drug-targets', target: 'cid000004080' } },
+{ data: { source: 'ensp00000342007STITCH-drug-targets', target: 'cid000074989' } },
+{ data: { source: 'ensp00000260682STITCH-drug-targets', target: 'cid000074989' } },
+{ data: { source: 'ensp00000311032STITCH-drug-targets', target: 'cid000003460' } },
+{ data: { source: 'ensp00000263025STITCH-drug-targets', target: 'cid000003460' } },
+{ data: { source: 'ensp00000215832STITCH-drug-targets', target: 'cid000003460' } },
+{ data: { source: 'ensp00000262186STITCH-drug-targets', target: 'cid000003460' } },
+{ data: { source: 'ensp00000338018STITCH-drug-targets', target: 'cid000003460' } },
+{ data: { source: 'ensp00000258400STITCH-drug-targets', target: 'cid000004090' } },
+{ data: { source: 'ensp00000337949STITCH-drug-targets', target: 'cid000004090' } },
+{ data: { source: 'ensp00000307766STITCH-drug-targets', target: 'cid000004090' } },
+{ data: { source: 'ensp00000316244STITCH-drug-targets', target: 'cid000004090' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000004090' } },
+{ data: { source: 'ensp00000276198STITCH-drug-targets', target: 'cid000004090' } },
+{ data: { source: 'ensp00000354859STITCH-drug-targets', target: 'cid000004090' } },
+{ data: { source: 'ensp00000313661STITCH-drug-targets', target: 'cid000004090' } },
+{ data: { source: 'ensp00000289753STITCH-drug-targets', target: 'cid000004090' } },
+{ data: { source: 'ensp00000327652STITCH-drug-targets', target: 'cid000004090' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000004746' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000004746' } },
+{ data: { source: 'ensp00000324648STITCH-drug-targets', target: 'cid000004746' } },
+{ data: { source: 'ensp00000258400STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000409378STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000337949STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000316244STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000342007STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000369960STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000373169STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000264381STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000276198STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000354859STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000260682STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000331108STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000261707STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000386069STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000280155STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000255380STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000289753STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000327652STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000360372STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000369237STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000324648STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000306129STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000360317STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000285979STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000387281STITCH-drug-targets', target: 'cid000004748' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000311032STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000306662STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000301141STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000409378STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000319984STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000337949STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000307766STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000316244STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000342007STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000369960STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000291295STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000373169STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000264381STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000276198STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000354859STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000252945STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000260682STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000349467STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000331108STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000262186STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000386069STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000280155STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000255380STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000313661STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000289753STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000327652STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000360372STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000306129STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000360317STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000272298STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000387281STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000306490STITCH-drug-targets', target: 'cid000005452' } },
+{ data: { source: 'ensp00000003100STITCH-drug-targets', target: 'cid000005404' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000306662STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000316244STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000369960STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000367959STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000354859STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000260682STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000261707STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000327652STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000360372STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000337915STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000369237STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000387281STITCH-drug-targets', target: 'cid000005584' } },
+{ data: { source: 'ensp00000259396STITCH-drug-targets', target: 'cid000004011' } },
+{ data: { source: 'ensp00000347299STITCH-drug-targets', target: 'cid000004011' } },
+{ data: { source: 'ensp00000409378STITCH-drug-targets', target: 'cid000004011' } },
+{ data: { source: 'ensp00000319984STITCH-drug-targets', target: 'cid000004011' } },
+{ data: { source: 'ensp00000342007STITCH-drug-targets', target: 'cid000004011' } },
+{ data: { source: 'ensp00000369960STITCH-drug-targets', target: 'cid000004011' } },
+{ data: { source: 'ensp00000353820STITCH-drug-targets', target: 'cid000004011' } },
+{ data: { source: 'ensp00000331108STITCH-drug-targets', target: 'cid000004011' } },
+{ data: { source: 'ensp00000261707STITCH-drug-targets', target: 'cid000004011' } },
+{ data: { source: 'ensp00000255380STITCH-drug-targets', target: 'cid000004011' } },
+{ data: { source: 'ensp00000369237STITCH-drug-targets', target: 'cid000004011' } },
+{ data: { source: 'ensp00000265724STITCH-drug-targets', target: 'cid000004011' } },
+{ data: { source: 'ensp00000306490STITCH-drug-targets', target: 'cid000004011' } },
+{ data: { source: 'siadhdrug-side-effects', target: 'cid000004932' } },
+{ data: { source: 'systemic lupus erythematosusdrug-side-effects', target: 'cid000004932' } },
+{ data: { source: 'gynecomastiadrug-side-effects', target: 'cid000002909' } },
+{ data: { source: 'paralytic ileusdrug-side-effects', target: 'cid000003954' } },
+{ data: { source: 'ileusdrug-side-effects', target: 'cid000003954' } },
+{ data: { source: 'paralytic ileusdrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'malignant syndromedrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'abnormal electroencephalogramdrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'mydriasisdrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'neuroleptic malignantdrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'protrusion of the tonguedrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'gynecomastiadrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'hyperpyrexiadrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'systemic lupus erythematosusdrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'ileusdrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'obstipationdrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'extrapyramidal symptomsdrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'positive pregnancy testsdrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'pseudoparkinsonismdrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'motor restlessnessdrug-side-effects', target: 'cid000002726' } },
+{ data: { source: 'paralytic ileusdrug-side-effects', target: 'cid000004976' } },
+{ data: { source: 'peculiar tastedrug-side-effects', target: 'cid000004976' } },
+{ data: { source: 'adenitisdrug-side-effects', target: 'cid000004976' } },
+{ data: { source: 'mydriasisdrug-side-effects', target: 'cid000004976' } },
+{ data: { source: 'testicular swellingdrug-side-effects', target: 'cid000004976' } },
+{ data: { source: 'siadhdrug-side-effects', target: 'cid000004976' } },
+{ data: { source: 'gynecomastiadrug-side-effects', target: 'cid000004976' } },
+{ data: { source: 'galactorrheadrug-side-effects', target: 'cid000004976' } },
+{ data: { source: 'hyperpyrexiadrug-side-effects', target: 'cid000004976' } },
+{ data: { source: 'ileusdrug-side-effects', target: 'cid000004976' } },
+{ data: { source: 'extrapyramidal symptomsdrug-side-effects', target: 'cid000004976' } },
+{ data: { source: 'hypomaniadrug-side-effects', target: 'cid000004976' } },
+{ data: { source: 'parotid swellingdrug-side-effects', target: 'cid000004976' } },
+{ data: { source: 'paralytic ileusdrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'malignant syndromedrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'abnormal electroencephalogramdrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'false positive pregnancy testsdrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'mydriasisdrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'neuroleptic malignantdrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'protrusion of the tonguedrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'gynecomastiadrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'galactorrheadrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'hyperpyrexiadrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'systemic lupus erythematosusdrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'ileusdrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'obstipationdrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'extrapyramidal symptomsdrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'positive pregnancy testsdrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'pseudoparkinsonismdrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'motor restlessnessdrug-side-effects', target: 'cid000004917' } },
+{ data: { source: 'paralytic ileusdrug-side-effects', target: 'cid000004543' } },
+{ data: { source: 'peculiar tastedrug-side-effects', target: 'cid000004543' } },
+{ data: { source: 'adenitisdrug-side-effects', target: 'cid000004543' } },
+{ data: { source: 'mydriasisdrug-side-effects', target: 'cid000004543' } },
+{ data: { source: 'testicular swellingdrug-side-effects', target: 'cid000004543' } },
+{ data: { source: 'siadhdrug-side-effects', target: 'cid000004543' } },
+{ data: { source: 'gynecomastiadrug-side-effects', target: 'cid000004543' } },
+{ data: { source: 'galactorrheadrug-side-effects', target: 'cid000004543' } },
+{ data: { source: 'ileusdrug-side-effects', target: 'cid000004543' } },
+{ data: { source: 'extrapyramidal symptomsdrug-side-effects', target: 'cid000004543' } },
+{ data: { source: 'hypomaniadrug-side-effects', target: 'cid000004543' } },
+{ data: { source: 'parotid swellingdrug-side-effects', target: 'cid000004543' } },
+{ data: { source: 'malignant syndromedrug-side-effects', target: 'cid000016362' } },
+{ data: { source: 'abnormal electroencephalogramdrug-side-effects', target: 'cid000016362' } },
+{ data: { source: 'neuroleptic malignantdrug-side-effects', target: 'cid000016362' } },
+{ data: { source: 'protrusion of the tonguedrug-side-effects', target: 'cid000016362' } },
+{ data: { source: 'gynecomastiadrug-side-effects', target: 'cid000016362' } },
+{ data: { source: 'galactorrheadrug-side-effects', target: 'cid000016362' } },
+{ data: { source: 'hyperpyrexiadrug-side-effects', target: 'cid000016362' } },
+{ data: { source: 'extrapyramidal symptomsdrug-side-effects', target: 'cid000016362' } },
+{ data: { source: 'motor restlessnessdrug-side-effects', target: 'cid000016362' } },
+{ data: { source: 'paralytic ileusdrug-side-effects', target: 'cid000002995' } },
+{ data: { source: 'peculiar tastedrug-side-effects', target: 'cid000002995' } },
+{ data: { source: 'malignant syndromedrug-side-effects', target: 'cid000002995' } },
+{ data: { source: 'adenitisdrug-side-effects', target: 'cid000002995' } },
+{ data: { source: 'mydriasisdrug-side-effects', target: 'cid000002995' } },
+{ data: { source: 'testicular swellingdrug-side-effects', target: 'cid000002995' } },
+{ data: { source: 'neuroleptic malignantdrug-side-effects', target: 'cid000002995' } },
+{ data: { source: 'siadhdrug-side-effects', target: 'cid000002995' } },
+{ data: { source: 'gynecomastiadrug-side-effects', target: 'cid000002995' } },
+{ data: { source: 'galactorrheadrug-side-effects', target: 'cid000002995' } },
+{ data: { source: 'ileusdrug-side-effects', target: 'cid000002995' } },
+{ data: { source: 'extrapyramidal symptomsdrug-side-effects', target: 'cid000002995' } },
+{ data: { source: 'hypomaniadrug-side-effects', target: 'cid000002995' } },
+{ data: { source: 'parotid swellingdrug-side-effects', target: 'cid000002995' } },
+{ data: { source: 'malignant syndromedrug-side-effects', target: 'cid000003386' } },
+{ data: { source: 'abnormal electroencephalogramdrug-side-effects', target: 'cid000003386' } },
+{ data: { source: 'mydriasisdrug-side-effects', target: 'cid000003386' } },
+{ data: { source: 'neuroleptic malignantdrug-side-effects', target: 'cid000003386' } },
+{ data: { source: 'siadhdrug-side-effects', target: 'cid000003386' } },
+{ data: { source: 'protrusion of the tonguedrug-side-effects', target: 'cid000003386' } },
+{ data: { source: 'gynecomastiadrug-side-effects', target: 'cid000003386' } },
+{ data: { source: 'galactorrheadrug-side-effects', target: 'cid000003386' } },
+{ data: { source: 'systemic lupus erythematosusdrug-side-effects', target: 'cid000003386' } },
+{ data: { source: 'hypomaniadrug-side-effects', target: 'cid000003386' } },
+{ data: { source: 'gynecomastiadrug-side-effects', target: 'cid000003823' } },
+{ data: { source: 'paralytic ileusdrug-side-effects', target: 'cid000002170' } },
+{ data: { source: 'peculiar tastedrug-side-effects', target: 'cid000002170' } },
+{ data: { source: 'malignant syndromedrug-side-effects', target: 'cid000002170' } },
+{ data: { source: 'mydriasisdrug-side-effects', target: 'cid000002170' } },
+{ data: { source: 'testicular swellingdrug-side-effects', target: 'cid000002170' } },
+{ data: { source: 'neuroleptic malignantdrug-side-effects', target: 'cid000002170' } },
+{ data: { source: 'siadhdrug-side-effects', target: 'cid000002170' } },
+{ data: { source: 'galactorrheadrug-side-effects', target: 'cid000002170' } },
+{ data: { source: 'ileusdrug-side-effects', target: 'cid000002170' } },
+{ data: { source: 'extrapyramidal symptomsdrug-side-effects', target: 'cid000002170' } },
+{ data: { source: 'hypomaniadrug-side-effects', target: 'cid000002170' } },
+{ data: { source: 'parotid swellingdrug-side-effects', target: 'cid000002170' } },
+{ data: { source: 'paralytic ileusdrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'malignant syndromedrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'abnormal electroencephalogramdrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'false positive pregnancy testsdrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'mydriasisdrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'neuroleptic malignantdrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'siadhdrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'protrusion of the tonguedrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'gynecomastiadrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'galactorrheadrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'hyperpyrexiadrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'systemic lupus erythematosusdrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'ileusdrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'obstipationdrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'extrapyramidal symptomsdrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'positive pregnancy testsdrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'motor restlessnessdrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'parotid swellingdrug-side-effects', target: 'cid000004748' } },
+{ data: { source: 'paralytic ileusdrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'malignant syndromedrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'false positive pregnancy testsdrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'neuroleptic malignantdrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'protrusion of the tonguedrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'gynecomastiadrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'galactorrheadrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'hyperpyrexiadrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'systemic lupus erythematosusdrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'ileusdrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'obstipationdrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'extrapyramidal symptomsdrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'positive pregnancy testsdrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'pseudoparkinsonismdrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'motor restlessnessdrug-side-effects', target: 'cid000005452' } },
+{ data: { source: 'parotid swellingdrug-side-effects', target: 'cid000005452' } },
+   ]
+  };
+
+<!-- the network variable is loaded. -->
+
+<!-- ################################################################### -->
+<!-- initiation of network visualization -->
+ $('#cy').cytoscape({
+ 	<!-- how much you can zoom in/out. -->
+	minZoom: 0.03,
+    maxZoom: 300.0,
+    motionBlur: true,
+    wheelSensitivity:0.05,
+	<!-- after checking multiple layouts, this one looks quite good with these parameters. In the next chapter, I will use the same parameters for updating the figure as well.  -->
+	layout: {
+    name: 'cose',
+    animate: true,
+    refresh: 8,
+    padding: 30,
+    randomize           : true,
+    nodeRepulsion       : 5000000,
+    idealEdgeLength: 50,
+    nodeOverlap         : 100,
+    edgeElasticity      : 100,
+    fit: true,
+    initialTemp         :2000,
+    numIter: 1000,
+  },
+  style: cytoscape.stylesheet()
+    .selector('node')
+      .css({
+      	<!-- this helps us to have wider node for drugs in comparison to annotation terms. -->
+      	'width': 'mapData(weight, 0, 100,0,100)',
+        <!-- node shape. -->
+        'shape': 'data(faveShape)',
+      	'font-size': 20,
+      	'padding-top': '10px',
+        'padding-left': '10px',
+        'padding-bottom': '10px',
+        'padding-right': '10px',
+        'text-valign': 'center',
+        'content': 'data(label)',
+        'background-color': 'data(faveColor)',
+      })
+    .selector('edge')
+      .css({
+      	<!-- fixed grey color, subject to change. -->
+      	'line-color': '#A4A4A4',
+          })
+    .selector(':selected')
+      .css({
+        'line-color': 'black',
+        'target-arrow-color': 'black'
+      })
+    .selector('.faded')
+      .css({
+      	<!-- this becomes active, if one of the nodes is selected. except its neightbors, all nodes will be shown as faded. -->
+        'opacity': 0.3,
+        'text-opacity': 0
+      }),
+     
+  <!-- name of the computer-generated enrichment network  -->
+  elements: wholenetwork,
+  
+  ready: function(){
+    window.cy = this;
+    
+    // giddy up...
+    <!-- ################################################################################## -->
+	<!-- these functions refer to right/left click within the network. -->
+    cy.elements().unselectify();
+    <!-- right click, link -->
+    cy.on('cxttapstart', 'node', function(){
+      try { // your browser may block popups
+   		 window.open( this.data('href') );
+	  } catch(e){ // fall back on url change
+   		 window.location.href = this.data('href'); 
+  		} 
+    });
+    <!-- nodes are faded if not neighbors of the selected node.  -->
+    cy.on('tap', 'node', function(e){
+      var node = e.cyTarget; 
+      var neighborhood = node.neighborhood().add(node);
+      
+      cy.elements().addClass('faded');
+      neighborhood.removeClass('faded');
+    });
+    
+    cy.on('tap', function(e){
+      if( e.cyTarget === cy ){
+        cy.elements().removeClass('faded');
+      }
+    });
+  }
+  <!-- ################################################################################## -->
+  
+     
+});
+
+
+	<!-- this function is for updating the layout with different layout algorithms. For cose and cola, there are additional parameters that were specified with the help of if conditions.  -->
+	$("#cy").cy(function(){
+		var cy = this;
+		
+		$("#layout-button").bind("click", function(){
+			if($("#layout-select").val() == 'cose')
+			{
+				cy.layout({
+				name: $("#layout-select").val(),
+				padding: 30,
+			    randomize           : true,
+			    animate: true,
+			    refresh: 8,
+			    nodeRepulsion       : 5000000,
+			    idealEdgeLength: 50,
+			    nodeOverlap         : 100,
+			    edgeElasticity      : 100,
+			    fit: true,
+			    initialTemp         :2000,
+			    numIter: 1000});
+			}
+			if($("#layout-select").val() == 'cola')
+			  {
+				cy.layout({
+				name: $("#layout-select").val(),
+				padding: 10,
+			    randomize : true});
+			}
+			<!--  the name can be directly used as the name of the layout algorithm  -->
+			if(($("#layout-select").val() != 'cose')&&($("#layout-select").val() != 'cola'))
+			{
+			cy.layout({
+				name: $("#layout-select").val()
+			});
+			}
+			<!-- after layout, we need to fit to the whole screen. circle is much bigger in comparison to other options, for example.  -->
+			cy.fit(cy.$('#j, #e'));
+		});
+	});
+	<!-- the sole purpose of this function is to get subset of the network, either baesd on db type or pval,Odds ratio criteria.  -->
+	$("#cy").cy(function(){
+		$("#redraw-button").bind("click", function(){
+			   <!-- In each case, we reinitiate all the network and remove nodes that are unselected.  -->
+			   cy.load(wholenetwork);
+			   <!-- unchecked boxes will be removed from the network.  -->
+			   <!-- Here, the names should match what is specificied from the file. This filtering is only applied to annotation terms while drugs were all retained. In the next step (below), we will remove drugs (nodes) with 0 degree.    -->
+			   if(!($("#stitch").is(':checked')))
+			   {
+			   		 cy.remove("node[db = 'STITCH-drug-targets']"); 
+			   }
+			   if(!($("#drugbank").is(':checked')))
+			   {
+			   		 cy.remove("node[db = 'drugbank']"); 
+			   }
+			   if(!($("#ttd").is(':checked')))
+			   {
+			   		 cy.remove("node[db = 'drug-TTD']"); 
+			   }
+			   if(!($("#atc").is(':checked')))
+			   {
+			   		 cy.remove("node[db = 'drug-ATC-code']"); 
+			   }
+			   if(!($("#sideeffect").is(':checked')))
+			   {
+			   		 cy.remove("node[db = 'drug-side-effects']"); 
+			   }
+			   if(!($("#toxicity").is(':checked')))
+			   {
+			   		 cy.remove("node[db = 'drug-Toxicity']"); 
+			   }
+			   <!-- filtering based on pval, there is no magic, here, i try to concatenate strings.  -->
+			   var str1 = "node[pval > ";
+			   var str2 = "]";
+			   var res = str1.concat($("#pval").val() ,str2);
+			   cy.remove(res);
+			   <!--  filtering based on Odds ratio. -->
+			   var str3 = "node[odds < ";
+			   var res2 = str3.concat($("#odds").val() ,str2);
+			   cy.remove(res2);	 
+			   <!-- removing all the nodes whose degree is 0.  -->
+			   cy.remove("node[[degree=0]]");
+			 	
+		});
+	}); 
+});
+
+</script>
+</body>
+</html>

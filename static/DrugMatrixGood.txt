@@ -1,0 +1,104 @@
+cute interstitial nephritis	Acute Interstitial Nephritis	DrugMatrix	Acute Interstitial Nephritis	http://en.wikipedia.org/wiki/Interstitial_nephritis
+acute renal failure	Acute Renal Failure	DrugMatrix	Acute Renal Failure	http://en.wikipedia.org/wiki/Acute_kidney_injury
+acute tubular necrosis	Acute Tubular Necrosis	DrugMatrix	Acute Tubular Necrosis	http://en.wikipedia.org/wiki/Acute_tubular_necrosis
+amenorrhea	Amenorrhea	DrugMatrix	Amenorrhea	http://en.wikipedia.org/wiki/Amenorrhoea
+anemia	Anemia	DrugMatrix	Anemia	http://en.wikipedia.org/wiki/Anemia
+angina	Angina	DrugMatrix	Angina	http://en.wikipedia.org/wiki/Angina
+angina pectoris	Angina Pectoris	DrugMatrix	Angina Pectoris	http://en.wikipedia.org/wiki/Angina_Pectoris
+anuria	Anuria	DrugMatrix	Anuria	http://en.wikipedia.org/wiki/Anuria
+arrhythmia	Arrhythmia	DrugMatrix	Arrhythmia	http://en.wikipedia.org/wiki/Arrhythmia
+asystole	Asystole	DrugMatrix	Asystole	http://en.wikipedia.org/wiki/Asystole
+atrial fibrillation	Atrial Fibrillation	DrugMatrix	Atrial Fibrillation	http://en.wikipedia.org/wiki/Atrial_Fibrillation
+atrioventricular blockade	Atrioventricular Blockade	DrugMatrix	Atrioventricular Blockade	http://en.wikipedia.org/wiki/Atrioventricular_block
+bleeding	Bleeding	DrugMatrix	Bleeding	http://en.wikipedia.org/wiki/Bleeding
+blood & bone marrow toxicity	Blood & Bone Marrow Toxicity	DrugMatrix	Blood & Bone Marrow Toxicity	http://en.wikipedia.org/wiki/Bone_marrow_suppression
+bone marrow suppression	Bone Marrow Suppression	DrugMatrix	Bone Marrow Suppression	http://en.wikipedia.org/wiki/Bone_marrow_suppression
+breakthrough bleeding	Breakthrough Bleeding	DrugMatrix	Breakthrough Bleeding	http://en.wikipedia.org/wiki/Breakthrough_bleeding
+carcinogenicity	Carcinogenicity	DrugMatrix	Carcinogenicity	http://en.wikipedia.org/wiki/Carcinogenicity
+carcinoid tumors	Carcinoid Tumors	DrugMatrix	Carcinoid Tumors	http://en.wikipedia.org/wiki/Carcinoid_tumors
+cardiac arrest	Cardiac Arrest	DrugMatrix	Cardiac Arrest	http://en.wikipedia.org/wiki/Cardiac_Arrest
+cardiac arrhythmia	Cardiac Arrhythmia	DrugMatrix	Cardiac Arrhythmia	http://en.wikipedia.org/wiki/Cardiac_arrhythmia
+cardiac conduction system malfunction	Cardiac Conduction System Malfunction	DrugMatrix	Cardiac Conduction System Malfunction	http://medical-dictionary.thefreedictionary.com/embryotoxicity
+cardiac failure	Cardiac Failure	DrugMatrix	Cardiac Failure	http://en.wikipedia.org/wiki/Heart_failure
+cardiac insufficiency	Cardiac Insufficiency	DrugMatrix	Cardiac Insufficiency	http://en.wikipedia.org/wiki/Cardiac_insufficiency
+cardiomyopathy	Cardiomyopathy	DrugMatrix	Cardiomyopathy	http://en.wikipedia.org/wiki/Cardiomyopathy
+cardiotoxicity	Cardiotoxicity	DrugMatrix	Cardiotoxicity	http://en.wikipedia.org/wiki/Cardiotoxicity
+cardiovascular collapse	Cardiovascular Collapse	DrugMatrix	Cardiovascular Collapse	http://en.wikipedia.org/wiki/Circulatory_collapse
+cardiovascular toxicity	Cardiovascular Toxicity	DrugMatrix	Cardiovascular Toxicity	http://en.wikipedia.org/wiki/Cardiotoxicity
+cerebrovascular accident	Cerebrovascular Accident	DrugMatrix	Cerebrovascular Accident	http://en.wikipedia.org/wiki/Cerebrovascular_Accident
+circulatory collapse	Circulatory Collapse	DrugMatrix	Circulatory Collapse	http://en.wikipedia.org/wiki/Circulatory_collapse
+clastogenicity	Clastogenicity	DrugMatrix	Clastogenicity	http://en.wikipedia.org/wiki/Clastogenicity
+congestive heart failure	Congestive Heart Failure	DrugMatrix	Congestive Heart Failure	http://en.wikipedia.org/wiki/Congestive_Heart_Failure
+convulsions	Convulsions	DrugMatrix	Convulsions	http://en.wikipedia.org/wiki/Convulsions
+death	Death	DrugMatrix	Death	http://en.wikipedia.org/wiki/Death
+dermatologic toxicity	Dermatologic Toxicity	DrugMatrix	Dermatologic Toxicity	http://dermnetnz.org/reactions/chemotherapy-toxicity.html
+embryo/fetal toxicity	Embryo/Fetal Toxicity	DrugMatrix	Embryo/Fetal Toxicity	http://medical-dictionary.thefreedictionary.com/embryotoxicity
+embryotoxicity	Embryotoxicity	DrugMatrix	Embryotoxicity	http://medical-dictionary.thefreedictionary.com/embryotoxicity
+exacerbation of arrhythmia	Exacerbation of Arrhythmia	DrugMatrix	Exacerbation of Arrhythmia	http://medical-dictionary.thefreedictionary.com/embryotoxicity
+extrasystoles	Extrasystoles	DrugMatrix	Extrasystoles	http://en.wikipedia.org/wiki/Premature_ventricular_contraction
+fetal toxicity	Fetal Toxicity	DrugMatrix	Fetal Toxicity	http://en.wikipedia.org/wiki/First-degree_atrioventricular_block
+first-degree av block	First-Degree AV block	DrugMatrix	First-Degree AV block	http://en.wikipedia.org/wiki/First-degree_atrioventricular_block
+fulminant hepatitis	Fulminant Hepatitis	DrugMatrix	Fulminant Hepatitis	http://www.webmd.com/hepatitis/tc/fulminant-hepatitis-topic-overview
+gastrointestinal toxicity	Gastrointestinal Toxicity	DrugMatrix	Gastrointestinal Toxicity	http://medical-dictionary.thefreedictionary.com/embryotoxicity
+genotoxicity	Genotoxicity	DrugMatrix	Genotoxicity	http://en.wikipedia.org/wiki/Genotoxicity
+glomerulonephritis	Glomerulonephritis	DrugMatrix	Glomerulonephritis	http://en.wikipedia.org/wiki/Glomerulonephritis
+heart block	Heart Block	DrugMatrix	Heart Block	http://en.wikipedia.org/wiki/Heart_block
+heart failure	Heart Failure	DrugMatrix	Heart Failure	http://en.wikipedia.org/wiki/Heart_Failure
+hematuria	Hematuria	DrugMatrix	Hematuria	http://en.wikipedia.org/wiki/Hematuria
+hemorrhage	Hemorrhage	DrugMatrix	Hemorrhage	http://en.wikipedia.org/wiki/Bleeding
+hepatic adenoma	Hepatic Adenoma	DrugMatrix	Hepatic Adenoma	http://en.wikipedia.org/wiki/Hepatic_Adenoma
+hepatic failure	Hepatic Failure	DrugMatrix	Hepatic Failure	http://en.wikipedia.org/wiki/Hepatic_failure
+hepatic necrosis	Hepatic Necrosis	DrugMatrix	Hepatic Necrosis	http://livertox.nih.gov/Phenotypes_ahn.html
+hepatic toxicity	Hepatic Toxicity	DrugMatrix	Hepatic Toxicity	http://en.wikipedia.org/wiki/Hepatotoxicity
+hepatic tumors	Hepatic Tumors	DrugMatrix	Hepatic Tumors	http://en.wikipedia.org/wiki/Hepatic_tumors
+hepatocellular carcinoma	Hepatocellular Carcinoma	DrugMatrix	Hepatocellular Carcinoma	http://en.wikipedia.org/wiki/Hepatocellular_carcinoma
+hepatotoxicity	Hepatotoxicity	DrugMatrix	Hepatotoxicity	http://en.wikipedia.org/wiki/Hepatotoxicity
+hypotension	Hypotension	DrugMatrix	Hypotension	http://en.wikipedia.org/wiki/Hypotension
+hypotensive shock	Hypotensive Shock	DrugMatrix	Hypotensive Shock	http://en.wikipedia.org/wiki/Hypotension
+immune system toxicity	Immune System Toxicity	DrugMatrix	Immune System Toxicity	http://scorecard.goodguide.com/health-effects/explanation.tcl?short_hazard_name=immun
+impotence	Impotence	DrugMatrix	Impotence	http://en.wikipedia.org/wiki/Erectile_dysfunction
+increased incidence of breast carcinoma	Increased Incidence of Breast Carcinoma	DrugMatrix	Increased Incidence of Breast Carcinoma	http://en.wikipedia.org/wiki/Breast_cancer
+interstitial nephritis	Interstitial Nephritis	DrugMatrix	Interstitial Nephritis	http://en.wikipedia.org/wiki/Interstitial_Nephritis
+leukopenia	Leukopenia	DrugMatrix	Leukopenia	http://en.wikipedia.org/wiki/Leukopenia
+liver cirrhosis	Liver Cirrhosis	DrugMatrix	Liver Cirrhosis	http://en.wikipedia.org/wiki/Liver_Cirrhosis
+liver necrosis	Liver Necrosis	DrugMatrix	Liver Necrosis	http://livertox.nih.gov/Phenotypes_ahn.html
+lymphoma	Lymphoma	DrugMatrix	Lymphoma	http://en.wikipedia.org/wiki/Lymphoma
+mental health disorders	Mental Health Disorders	DrugMatrix	Mental Health Disorders	http://en.wikipedia.org/wiki/Mental_disorder
+mutagenicity	Mutagenicity	DrugMatrix	Mutagenicity	http://en.wikipedia.org/wiki/Mutagenicity
+myelosuppression	Myelosuppression	DrugMatrix	Myelosuppression	http://en.wikipedia.org/wiki/Myelosuppression
+myocardial depression	Myocardial Depression	DrugMatrix	Myocardial Depression	http://en.wikipedia.org/wiki/Myocardial_infarction
+myocardial infarction	Myocardial Infarction	DrugMatrix	Myocardial Infarction	http://en.wikipedia.org/wiki/Myocardial_infarction
+myocardial ischemia	Myocardial Ischemia	DrugMatrix	Myocardial Ischemia	http://en.wikipedia.org/wiki/Myocardial_ischemia
+myocarditis	Myocarditis	DrugMatrix	Myocarditis	http://en.wikipedia.org/wiki/Myocarditis
+nephrotic syndrome	Nephrotic Syndrome	DrugMatrix	Nephrotic Syndrome	http://en.wikipedia.org/wiki/Nephrotic_syndrome
+nephrotoxicity	Nephrotoxicity	DrugMatrix	Nephrotoxicity	http://en.wikipedia.org/wiki/Nephrotoxicity
+neurotoxicity	Neurotoxicity	DrugMatrix	Neurotoxicity	http://en.wikipedia.org/wiki/Neurotoxicity
+neutropenia	Neutropenia	DrugMatrix	Neutropenia	http://en.wikipedia.org/wiki/Neutropenia
+ototoxicity	Ototoxicity	DrugMatrix	Ototoxicity	http://en.wikipedia.org/wiki/Ototoxicity
+pancytopenia	Pancytopenia	DrugMatrix	Pancytopenia	http://en.wikipedia.org/wiki/Pancytopenia
+premature ventricular contrations (pvcs)	Premature Ventricular Contrations (PVCs)	DrugMatrix	Premature Ventricular Contrations (PVCs)	http://en.wikipedia.org/wiki/Premature_ventricular_contraction
+renal failure	Renal Failure	DrugMatrix	Renal Failure	http://en.wikipedia.org/wiki/Renal_Failure
+renal papillary necrosis	Renal Papillary Necrosis	DrugMatrix	Renal Papillary Necrosis	http://en.wikipedia.org/wiki/Renal_Papillary_Necrosis
+renal toxicity	Renal Toxicity	DrugMatrix	Renal Toxicity	http://en.wikipedia.org/wiki/Nephrotoxicity
+renal tubular necrosis	Renal Tubular Necrosis	DrugMatrix	Renal Tubular Necrosis	http://en.wikipedia.org/wiki/Acute_tubular_necrosis
+reproductive system toxicity	Reproductive System Toxicity	DrugMatrix	Reproductive System Toxicity	http://en.wikipedia.org/wiki/Reproductive_toxicity
+respiratory toxicity	Respiratory Toxicity	DrugMatrix	Respiratory Toxicity	http://en.wikipedia.org/wiki/Pulmonary_toxicity
+seizures	Seizures	DrugMatrix	Seizures	http://en.wikipedia.org/wiki/Seizures
+shock	Shock	DrugMatrix	Shock	http://en.wikipedia.org/wiki/Shock
+skin toxicity	Skin Toxicity	DrugMatrix	Skin Toxicity	http://dermnetnz.org/reactions/chemotherapy-toxicity.html
+stroke	Stroke	DrugMatrix	Stroke	http://en.wikipedia.org/wiki/Stroke
+supraventricular tachycardia	Supraventricular Tachycardia	DrugMatrix	Supraventricular Tachycardia	http://en.wikipedia.org/wiki/Supraventricular_tachycardia
+teratogenicity	Teratogenicity	DrugMatrix	Teratogenicity	http://en.wikipedia.org/wiki/Teratogenicity
+thrombocytopenia	Thrombocytopenia	DrugMatrix	Thrombocytopenia	http://en.wikipedia.org/wiki/Thrombocytopenia
+thromboembolism	Thromboembolism	DrugMatrix	Thromboembolism	http://en.wikipedia.org/wiki/Thromboembolism
+thrombosis	Thrombosis	DrugMatrix	Thrombosis	http://en.wikipedia.org/wiki/Thrombosis
+torsade de pointes arrhythmia	Torsade de Pointes Arrhythmia	DrugMatrix	Torsade de Pointes Arrhythmia	http://en.wikipedia.org/wiki/Torsades_de_pointes
+tubular necrosis	Tubular Necrosis	DrugMatrix	Tubular Necrosis	http://en.wikipedia.org/wiki/Tubular_necrosis
+ventricular arrhythmia	Ventricular Arrhythmia	DrugMatrix	Ventricular Arrhythmia	http://en.wikipedia.org/wiki/Ventricular_arrhythmia#Ventricular
+ventricular fibrillation	Ventricular Fibrillation	DrugMatrix	Ventricular Fibrillation	http://en.wikipedia.org/wiki/Ventricular_fibrillation
+ventricular tachycardia	Ventricular Tachycardia	DrugMatrix	Ventricular Tachycardia	http://en.wikipedia.org/wiki/Ventricular_tachycardia
+genitourinary system toxicity	genitourinary system toxicity	DrugMatrix	genitourinary system toxicity	http://medical-dictionary.thefreedictionary.com/embryotoxicity
+ocular toxicity	ocular toxicity	DrugMatrix	ocular toxicity	http://sideeffects.embl.de/se/C0852875
+biliary system toxicity	biliary system toxicity	DrugMatrix	biliary system toxicity	http://sideeffects.embl.de/se/C0151824
+poisoning	poisoning	DrugMatrix	poisoning	http://en.wikipedia.org/wiki/Poison
+musculoskeletal system toxicity	musculoskeletal system toxicity	DrugMatrix	musculoskeletal system toxicity	http://medical-dictionary.thefreedictionary.com/embryotoxicity
