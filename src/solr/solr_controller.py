@@ -39,8 +39,8 @@ class SolrController:
         # check whether search space is loaded and reload it if not
         if not self.solrInstance.isIndexLoaded(self.search_space):
             print 'Solr Server does not have index ' + self.search_space + ' loaded\nTrying to reload index...'
-        elif self.verbosity >= 3:
-            print 'Solr Server does already have index ' + self.search_space + ' loaded'
+        # elif self.verbosity >= 3:
+        #     print 'Solr Server does already have index ' + self.search_space + ' loaded'
 
         # die if Solr / Lucene could NOT be started correctly
         if not (self.solrInstance.isSolrServerReady() and self.solrInstance.isIndexLoaded(self.search_space)):
@@ -49,8 +49,6 @@ class SolrController:
             exit(1)
         # after this we will just assume that Solr / Lucene are running correctly
 
-        if self.verbosity >= 2:
-            print 'Solr search space.............. ' + self.search_space
 
 
 
@@ -296,13 +294,13 @@ class SolrController:
         self.__JRE_MEM = cfg.get('solr', 'jre_mem')
         tmp = cfg.get('solr', 'search_indices')
         self.__SUPP_INDICES = re.findall(r'[[\w\\._-]+', tmp)
-        if self.verbosity >= 2:
-            print 'Solr stop key ................. ' + self.__STOP_KEY
-            print 'Solr installation dir ......... ' + self.__SOLR_INSTALL_DIR
-            print 'Solr JRE command .............. ' + self.__JRE_CMD
-            print 'Solr JRE memory ............... ' + self.__JRE_MEM
-            print 'Solr search indices ........... ' + ', '.join(self.__SUPP_INDICES)
-        if self.verbosity >= 3:
-            print ''
-            os.system('%s -version'%self.__JRE_CMD)
-            print ''
+        # if self.verbosity >= 2:
+        #     print 'Solr stop key ................. ' + self.__STOP_KEY
+        #     print 'Solr installation dir ......... ' + self.__SOLR_INSTALL_DIR
+        #     print 'Solr JRE command .............. ' + self.__JRE_CMD
+        #     print 'Solr JRE memory ............... ' + self.__JRE_MEM
+        #     print 'Solr search indices ........... ' + ', '.join(self.__SUPP_INDICES)
+        # if self.verbosity >= 3:
+        #     print ''
+        #     os.system('%s -version'%self.__JRE_CMD)
+        #     print ''

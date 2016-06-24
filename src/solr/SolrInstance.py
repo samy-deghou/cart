@@ -15,8 +15,6 @@ class SolrInstance:
         self.stop_port = '-1'
 
 
-
-
     ### Method to check if a search index (core) is loaded and thus ready to be queried
     def isIndexLoaded(self, index):
         if self.start_port != '-1':

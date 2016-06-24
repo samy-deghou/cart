@@ -34,7 +34,7 @@ def __main__():
     
     st = time()
     args = parser.parse_args()
-    print("DEBUG: " + args.outputfile)
+
     # check arguments for validity
     # TODO this should be better tied to the config file!
     if (args.universe.upper() == 'STITCH'):
@@ -78,7 +78,7 @@ def __main__():
         print 'synonyms option: %s' %args.synonyms
 
     # start a SolrController instance and delegate name matching to it
-    print("Giving this: " + args.outputfiledetail)
+
     sc = SolrController(args.outputfiledetail,args.levenshtein, args.inputtype, args.verbose, search_space=universe)
     nmc = NameMatchingController()
     nmc.solrController = sc

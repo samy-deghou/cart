@@ -23,6 +23,9 @@ class NameMatchingController:
         self.solrController = ''
 
 
+
+
+
 ### Main high-level method to perform the chemical name matching
     def matchNames(self, query_file, output_file, approximate_option, exact_option, heuristic_option):
         if self.solrController.verbosity >= 2:
@@ -98,8 +101,8 @@ class NameMatchingController:
             # submit query if the chemical name has been modified
             if modified_chemical != query_i:
                 #print ' Processing query %i (Heuristic matching) %s, %s' % (i, query_i, modified_chemical)
-                raw_result = self.__submitQuery(modified_chemical, 'name_approx')
-                res_parsed = self.__parseNameMatches(raw_result, True, score, 'HEURISTIC_MATCH', query_i)
+                raw_result = self.submitQuery(modified_chemical, 'name_approx')
+                res_parsed = self.parseNameMatches(raw_result, True, score, 'HEURISTIC_MATCH', query_i)
                 #print(res_parsed)
                 results_list.append(res_parsed)
         if self.solrController.verbosity >= 2:
@@ -127,20 +130,20 @@ class NameMatchingController:
             if self.solrController.input_type == 'smiles':
                 inchi_of_smile = self.getInchiFromSmile(query_i)
                 #                print("WARNING INCHI: " + query_i + " transformed to : " + self.getInchiFromSmile(query_i))
-                raw_result = self.__submitQuery(inchi_of_smile, 'name')
+                raw_result = self.submitQuery(inchi_of_smile, 'name')
                 raw_result = self.__correctThroughProperName(raw_result)
             elif self.solrController.input_type == 'inchis' and "-" in query_i:
                 first_part_of_inchi = query_i.split("-")[0]
                 #print("WATCH OUT, detected hyphen in inchis. only querying for: " + first_part_of_inchi )
-                raw_result = self.__submitQuery(first_part_of_inchi, 'name')
+                raw_result = self.submitQuery(first_part_of_inchi, 'name')
                 raw_result = self.__correctThroughProperName(raw_result)
             else:
-                raw_result = self.__submitQuery(query_i, 'name')
+                raw_result = self.submitQuery(query_i, 'name')
                 if self.solrController.input_type == 'inchis':
                     raw_result = self.__correctThroughProperName(raw_result)
             #print "original name: " + query_i
             #print " "
-            results_list.append(self.__parseNameMatches(raw_result, False, score, 'EXACT_MATCH', query_i))
+            results_list.append(self.parseNameMatches(raw_result, False, score, 'EXACT_MATCH', query_i))
         if self.solrController.verbosity >= 2:
             sys.stdout.write('\n')
             sys.stdout.flush()
@@ -177,8 +180,8 @@ class NameMatchingController:
             #if self.solrController.verbosity >= 1:
             #    print ' Processing query %i (Fuzzy matching) %s' % (i, query_i)
             # submit query
-            raw_result = self.__submitQuery(query_i, 'name_approx')
-            raw_results_parsed = self.__parseNameMatches(raw_result, True, score, 'FUZZY_MATCH', query_i)
+            raw_result = self.submitQuery(query_i, 'name_approx')
+            raw_results_parsed = self.parseNameMatches(raw_result, True, score, 'FUZZY_MATCH', query_i)
             # append the results if and only if there is at least one match
             if raw_results_parsed.split('\n')[0].split('\t')[-1] != 'NA':
                 results_list.append(raw_results_parsed)
@@ -188,7 +191,7 @@ class NameMatchingController:
         self.results_fuzzy = ''.join(results_list)
 
 
-    def __parseNameMatches(self, results, fuzzy_option, score, match_type, chem_orig_name = None):
+    def parseNameMatches(self, results, fuzzy_option, score, match_type, chem_orig_name = None):
         json_ob = json.loads(results)
         # TODO better error handling
         query = json_ob['responseHeader']['params']['q']
@@ -412,7 +415,7 @@ class NameMatchingController:
 
 
     ### Method to submit a query for matching to Solr / Lucene
-    def __submitQuery(self, query, mode):
+    def submitQuery(self, query, mode):
         # get rid of non ascii characters
         query = ''.join(c if ord(c) < 128 else '' for c in query)
         # encode query in the format approriate for lucene
