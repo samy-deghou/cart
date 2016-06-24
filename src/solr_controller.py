@@ -21,7 +21,7 @@ class SolrController:
     ### Constructor
     def __init__(self, outputfiledetail, fuzzyThreshold, inputType='names', verbose=1, search_space='stitch20141111'):
         self.verbosity = verbose
-        self.__start_port = '-1'
+        self.__start_port = '34190'
         self.__stop_port = '-1'
         self.__input_type = inputType
         self.__fuzzyThreshold = fuzzyThreshold
@@ -139,7 +139,7 @@ class SolrController:
 
     ### Checks whether the Solr Server is running
     def isSolrServerReady(self):
-        url = 'http://localhost:' + str(self.__start_port) + '/solr/#/'
+        url = 'http://sam.embl.de:' + str(self.__start_port) + '/solr/#/'
         try:
             response = urllib2.urlopen(url)
             return True
@@ -153,7 +153,7 @@ class SolrController:
     ### Method to check if a search index (core) is loaded and thus ready to be queried
     def isIndexLoaded(self, index):
         if self.__start_port != '-1':
-            url = 'http://localhost:' + self.__start_port + '/solr/admin/cores?action=STATUS'
+            url = 'http://sam.embl.de:' + self.__start_port + '/solr/admin/cores?action=STATUS'
             try:
                 response = urllib2.urlopen(url)
                 response_content = response.read()
@@ -175,7 +175,7 @@ class SolrController:
         if self.__start_port != '-1':
             if not self.isIndexLoaded(index):
                 try:
-                    url = 'http://localhost:' + self.__start_port + '/solr/admin/cores?action=CREATE&name=' + index + '&config=solrconfig.xml&schema=schema.xml&dataDir=data'
+                    url = 'http://sam.embl.de:' + self.__start_port + '/solr/admin/cores?action=CREATE&name=' + index + '&config=solrconfig.xml&schema=schema.xml&dataDir=data'
                     if self.verbosity >= 2:
                         print 'Trying to load ' + index + ' on port ' + self.__start_port + '\n  (url: ' + url + ')...'
                     urllib2.urlopen(url)
@@ -525,11 +525,11 @@ class SolrController:
 	if mode == "name_approx":
 	    if query.isdigit():
 	        enc_query = urllib2.quote(mode + ':' + query)
-	        solr_query = ['curl', '-d', 'q=' + enc_query + '+OR+title%3A*' + query  + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://localhost:' + self.__start_port + '/solr/' + self.__search_space + '/select']
+	        solr_query = ['curl', '-d', 'q=' + enc_query + '+OR+title%3A*' + query  + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://sam.embl.de:' + self.__start_port + '/solr/' + self.__search_space + '/select']
 	    else:
-	        solr_query = ['curl', '-d', 'q=' + enc_query + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://localhost:' + self.__start_port + '/solr/' + self.__search_space + '/select']
+	        solr_query = ['curl', '-d', 'q=' + enc_query + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://sam.embl.de:' + self.__start_port + '/solr/' + self.__search_space + '/select']
 	else:
-            solr_query = ['curl', '-d', 'q=' + enc_query + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://localhost:' + self.__start_port + '/solr/' + self.__search_space + '/select']
+            solr_query = ['curl', '-d', 'q=' + enc_query + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://sam.embl.de:' + self.__start_port + '/solr/' + self.__search_space + '/select']
         #print "Solr query (" + mode + ") : "
         #if mode == "name_approx":
         #    print solr_query
