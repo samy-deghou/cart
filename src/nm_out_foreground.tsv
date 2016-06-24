@@ -1,5 +1,5 @@
 CID fetched	Input scores	Input chemicals	Fetched chemicals	Match type
-cid000002165	NA	amodiaquine	amodiaquine	EXACT_MATCH
+cid000192859	NA	amdiaquine	amidoquine	FUZZY_MATCH
 cid000002170	NA	amoxapine	amoxapine	EXACT_MATCH
 cid000000225	NA	androsterone	androsterone	EXACT_MATCH
 cid000002247	NA	astemizole	astemizole	EXACT_MATCH
@@ -17,8 +17,8 @@ cid000000225	NA	epiandrosterone	epiandrosterone	EXACT_MATCH
 cid000003280	NA	ethaverine	ethaverine	EXACT_MATCH
 cid000000225	NA	etiocholanolone	etiocholanolone	EXACT_MATCH
 cid000003326	NA	famprofazone	famprofazone	EXACT_MATCH
+cid000003396	NA	flspirilene	fluspirileno	FUZZY_MATCH
 cid000003386	NA	fluoxetine	fluoxetine	EXACT_MATCH
-cid000003396	NA	fluspirilene	fluspirilene	EXACT_MATCH
 cid000003460	NA	geldanamycin	geldanamycin	EXACT_MATCH
 cid000003474	NA	glafenine	glafenine	EXACT_MATCH
 cid000003573	NA	hecogenin	hecogenin	EXACT_MATCH
@@ -30,7 +30,7 @@ cid000003954	NA	loperamide	loperamide	EXACT_MATCH
 cid000004011	NA	maprotiline	maprotiline	EXACT_MATCH
 cid000004080	NA	mestranol	mestranol	EXACT_MATCH
 cid000004090	NA	metergoline	metergoline	EXACT_MATCH
-cid000004135	NA	methylbenzethonium chloride	methylbenzethonium chloride	EXACT_MATCH
+cid000004135	NA	methylbenzethnium chloride	methylbenzethonium	HEURISTIC_MATCH
 cid000004106	NA	metitepine	metitepine	EXACT_MATCH
 cid000004167	NA	metixene	metixene	EXACT_MATCH
 cid000123620	NA	mometasone	mometasone	EXACT_MATCH

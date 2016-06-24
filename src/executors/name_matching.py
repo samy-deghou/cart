@@ -1,10 +1,12 @@
 import sys
+
 sys.path.append('solr')
+sys.path.append('controllers')
 import argparse
 from time import time
 
 from solr_controller import SolrController
-
+from NameMatchingController import NameMatchingController
 
 def __main__():
     # parser for command-line arguments
@@ -78,10 +80,13 @@ def __main__():
     # start a SolrController instance and delegate name matching to it
     print("Giving this: " + args.outputfiledetail)
     sc = SolrController(args.outputfiledetail,args.levenshtein, args.inputtype, args.verbose, search_space=universe)
+    nmc = NameMatchingController()
+    nmc.solrController = sc
     if args.synonyms:
         sc.findSynonyms(args.namefile, args.outputfile, args.approximate, exact, args.heuristic)
     else:
-        sc.matchNames(args.namefile, args.outputfile, args.approximate, exact, args.heuristic)
+        # sc.matchNames(args.namefile, args.outputfile, args.approximate, exact, args.heuristic)
+        nmc.matchNames(args.namefile, args.outputfile, args.approximate, exact, args.heuristic)
 
     e = time() - st
     if args.verbose >=1:

@@ -1,15 +1,9 @@
 from __future__ import division
 import subprocess
-import urllib2
-from urllib2 import URLError
-import socket
 import os
 import sys
-import signal
 import json
 import re
-import psutil
-import time
 import Levenshtein
 
 import ConfigParser
@@ -23,10 +17,10 @@ class SolrController:
     ### Constructor
     def __init__(self, outputfiledetail, fuzzyThreshold, inputType='names', verbose=1, search_space='stitch20141111'):
         self.verbosity = verbose
-        self.__solrInstance = SolrInstance()
-        self.__input_type = inputType
-        self.__fuzzyThreshold = fuzzyThreshold
-        self.__output_file_detail = outputfiledetail
+        self.solrInstance = SolrInstance()
+        self.input_type = inputType
+        self.fuzzyThreshold = fuzzyThreshold
+        self.output_file_detail = outputfiledetail
 
         # get settings from config file
         self.__readConfig()
@@ -36,35 +30,27 @@ class SolrController:
             print '(consider updating settings.conf)'
             print 'Exiting'
             exit(1)
-        self.__search_space = search_space
-        
+        self.search_space = search_space
+
         # attempt to restart the Solr Server
-        if not self.__solrInstance.isSolrServerReady():
-            print 'Trying to (re-)start Solr Server...'
-            self.restartSolrServer()
+        if not self.solrInstance.isSolrServerReady():
+            print 'The solr server does not seem to be running'
 
         # check whether search space is loaded and reload it if not
-        if not self.__solrInstance.isIndexLoaded(self.__search_space):
-            print 'Solr Server does not have index ' + self.__search_space + ' loaded\nTrying to reload index...'
-            self.loadIndex(self.__search_space)
+        if not self.solrInstance.isIndexLoaded(self.search_space):
+            print 'Solr Server does not have index ' + self.search_space + ' loaded\nTrying to reload index...'
         elif self.verbosity >= 3:
-            print 'Solr Server does already have index ' + self.__search_space + ' loaded'
+            print 'Solr Server does already have index ' + self.search_space + ' loaded'
 
         # die if Solr / Lucene could NOT be started correctly
-        if not (self.__solrInstance.isSolrServerReady() and self.__solrInstance.isIndexLoaded(self.__search_space)):
+        if not (self.solrInstance.isSolrServerReady() and self.solrInstance.isIndexLoaded(self.search_space)):
             print 'Failed to establish connection to Solr Server.'
             print 'Exiting'
             exit(1)
         # after this we will just assume that Solr / Lucene are running correctly
 
         if self.verbosity >= 2:
-            print 'Solr search space.............. ' + self.__search_space
-        self.query_dict = ''
-        self.occurence_chemicals = ''
-        self.results_exact = ''
-        self.results_fuzzy = ''
-        self.results_heuristic = ''
-        self.results_synonyms = ''
+            print 'Solr search space.............. ' + self.search_space
 
 
 
@@ -77,58 +63,12 @@ class SolrController:
         return 'cid' + cid
                 
 
-    ### Main high-level method to perform the chemical name matching
-    def matchNames(self, query_file, output_file, approximate_option, exact_option, heuristic_option):
-        if self.verbosity >= 2:
-            print '\nStarting name matching...'
-        # parse chemicals from the file
-        # TODO IO error handling
-        self.initQueryDict(query_file)
-        # perform the chemical matching
-        
-        if self.__output_file_detail != "null":
-            with open(self.__output_file_detail, 'a') as fout:
-                print >>fout,"Input chemicals\tFetched CIDs\tFetched chemicals\tScores"
-        if exact_option:
-            start = time.time()
-            self.matchExact()
-            end = time.time()
-            if self.verbosity >= 2:
-                print '    time taken for exact matching:  %.1f sec.' %(end-start) 
-        if heuristic_option:
-            start = time.time()
-            self.matchHeuristic()
-            end = time.time()
-            if self.verbosity >= 2:        
-                print '    time taken for heuristic matching: %.1f sec.' %(end-start) 
-        if approximate_option:
-            start = time.time()
-            self.matchFuzzy()
-            end = time.time()
-            if self.verbosity >= 2:        
-                print '    time taken for fuzzy matching:  %.1f sec.' %(end-start) 
-#        if heuristic_option:
-#            start = time.time()
-#            self.matchHeuristic()
-#            end = time.time()
-#            if self.verbosity >= 2:        
-#                print '    time taken for heuristic matching: %.1f sec.' %(end-start) 
-
-        if self.verbosity >= 2:
-            print '\nParsing results...\n'
-        best_matches = self.__parseBestMatches()
-        with open(output_file, 'w') as fout:
-            best_matches_encoded = best_matches.encode('utf-8')
-	    print >>fout,"CID fetched\tInput scores\tInput chemicals\tFetched chemicals\tMatch type"
-            print >>fout, best_matches_encoded
-        assert fout.closed
 
 
     ### Method to retrieve synonymous chemical names
     def findSynonyms(self, query_file, output_file, approximate, exact, heuristic):
         if self.verbosity >= 2:
             print '\nStarting synonym retrieval...'
-
         # parse chemicals from the file
         # TODO IO error handling
         self.initQueryDict(query_file)
@@ -149,8 +89,6 @@ class SolrController:
                 perc_done = int(perc_done * 100)
                 sys.stdout.write('\r    %d%%' %perc_done)
                 sys.stdout.flush()
-#            if self.verbosity >= 3:
-#                print ' Processing query %i (Exact matching) %s' % (i, query_i)
             # submit query
             raw_result = self.__submitQuery(cid, 'title')
             #print raw_result
@@ -178,168 +116,24 @@ class SolrController:
         if not output_java_program.startswith("Problem with parsing the SMILE"):
 	    complete_smile = re.split("\n",output_java_program)[-2]
             essential_smile = re.split("-",complete_smile)[0]
-        
 	return essential_smile
-        
-
-
-    ### Method to perform approximate / fuzzy matching on those chemical names
-    ### that could not be matched exactly with the above method
-    def matchFuzzy(self):
-        already_matched = []
-        results = self.results_exact.strip() + '\n' + self.results_heuristic.strip()
-        #results = self.results_exact.strip() + '\n'
-        for l in results.split('\n'):
-            if len(l) >= 1:
-                l = l.split('\t')
-                if not l[5] == 'NA':
-                    already_matched.append(l[0])
-        # unmatched with the exact matching
-        queries = set(self.query_dict.viewkeys()).difference(already_matched)
-        #print 'number of matches (exact): %i' %len(already_matched)
-        #print 'left unmatched: %i' %len(queries)
-        results_list = []
-        if self.verbosity >= 0:
-            print '\n... Fuzzy matching ... (' + str(len(queries)) + ' unique chemicals)'
-
-        i = 0
-        for query_i in queries:
-            i = i + 1
-            score = self.query_dict[query_i]
-            if self.verbosity >= 2:
-                perc_done = i / len(queries)
-                perc_done = int(perc_done * 100)
-                sys.stdout.write('\r    %d%%' %perc_done)
-                sys.stdout.flush()
-            #if self.verbosity >= 1:
-            #    print ' Processing query %i (Fuzzy matching) %s' % (i, query_i)
-            # submit query
-            raw_result = self.__submitQuery(query_i, 'name_approx')
-            raw_results_parsed = self.__parseNameMatches(raw_result, True, score, 'FUZZY_MATCH', query_i)
-            # append the results if and only if there is at least one match 
-            if raw_results_parsed.split('\n')[0].split('\t')[-1] != 'NA':
-                results_list.append(raw_results_parsed)
-        if self.verbosity >= 2:
-            sys.stdout.write('\n')
-            sys.stdout.flush()
-        self.results_fuzzy = ''.join(results_list)
 
 
 
-    ### Method to match chemicals using a heuristic, which modifies the chemical name
-    ### according to predefined rules (using the modChemical function).
-    ### For modified chemical names, another fuzzy query is performed
-    def matchHeuristic(self):
-	#print("in heuristic matching")
-        # get the chemicals without previous matches
-        results = self.results_exact.strip() + '\n' + self.results_fuzzy.strip()
-        already_matched = []
-        # TODO there seems to be an issue with empty lines...
-        for l in results.split('\n'):
-            if len(l) >= 1:
-                l = l.split('\t')
-                if not l[5] == 'NA':
-                    already_matched.append(l[0])
-        # unmatched with previous matching attempts (exact & fuzzy)
-        queries = set(self.query_dict.viewkeys()).difference(already_matched)
-        #print 'number of matches (exact & fuzzy): %i' %len(already_matched)
-        #print 'left unmatched: %i' %len(queries)
-        results_list = []
-        if self.verbosity >= 2:
-            print '\n... Heuristic matching ... (' + str(len(queries)) + ' unique chemicals)'
-        i = 0
-        for query_i in queries:
-            i = i + 1
-            score = self.query_dict[query_i]
-            if self.verbosity >= 2:
-                perc_done = i / len(queries)
-                perc_done = int(perc_done * 100)
-                sys.stdout.write('\r    %d%%' %perc_done)
-                sys.stdout.flush()
-            #if self.verbosity >= 3:
-            #    print ' Processing query %i (Heuristic matching) %s' % (i, query_i)
-            # check if we can prepare query (get rid of the garbage name)
-            modified_chemical = self.modChemical(query_i)
-            # submit query if the chemical name has been modified
-            if modified_chemical != query_i:
-                #print ' Processing query %i (Heuristic matching) %s, %s' % (i, query_i, modified_chemical)
-                raw_result = self.__submitQuery(modified_chemical, 'name_approx')
-                res_parsed = self.__parseNameMatches(raw_result, True, score, 'HEURISTIC_MATCH', query_i)
-                #print(res_parsed)
-                results_list.append(res_parsed)
-        if self.verbosity >= 2:
-            sys.stdout.write('\n')
-            sys.stdout.flush()
-        self.results_heuristic = ''.join(results_list)
-
-    ### Method to perform exact matching on a list of chemical names
-    def matchExact(self):
-        results_list = []
-        if self.verbosity >= 2:
-            print '... Exact matching ...(' + str(len(self.query_dict)) + ' unique chemicals)'
-        i = 0
-        for query_i in self.query_dict.viewkeys():
-            i = i + 1
-            score = self.query_dict[query_i]
-            if self.verbosity >= 2:
-                perc_done = i / len(self.query_dict)
-                perc_done = int(perc_done * 100)
-                sys.stdout.write('\r    %d%%' %perc_done)
-                sys.stdout.flush()
-            #if self.verbosity >= 1:
-            #    print ' Processing query %i (Exact matching) %s' % (i, query_i)
-            # Get the smile if the query type is INCHI
-            if self.__input_type == 'smiles':
-                inchi_of_smile = self.getInchiFromSmile(query_i)
-#                print("WARNING INCHI: " + query_i + " transformed to : " + self.getInchiFromSmile(query_i))
-                raw_result = self.__submitQuery(inchi_of_smile, 'name')
-                raw_result = self.__correctThroughProperName(raw_result)
-            elif self.__input_type == 'inchis' and "-" in query_i:
-                first_part_of_inchi = query_i.split("-")[0]
-                #print("WATCH OUT, detected hyphen in inchis. only querying for: " + first_part_of_inchi )
-                raw_result = self.__submitQuery(first_part_of_inchi, 'name')
-                raw_result = self.__correctThroughProperName(raw_result)
-            else:
-                raw_result = self.__submitQuery(query_i, 'name')
-                if self.__input_type == 'inchis':
-                    raw_result = self.__correctThroughProperName(raw_result)
-            #print "original name: " + query_i
-            #print " "
-            results_list.append(self.__parseNameMatches(raw_result, False, score, 'EXACT_MATCH', query_i))
-        if self.verbosity >= 2:
-            sys.stdout.write('\n')
-            sys.stdout.flush()
-        self.results_exact = ''.join(results_list)
-        
     
     def __correctThroughProperName(self,raw_result):
         results = json.loads(raw_result)
         the_cid = results['response']['docs'][0]['title'][0]
-        first_sp = self.__search_space
-        self.__search_space = 'cidNameUniqueFull'
+        first_sp = self.search_space
+        self.search_space = 'cidNameUniqueFull'
         raw_result = self.__submitQuery(the_cid,'title')
         #print('New raw results: ')
         #print(raw_result)
-        self.__search_space = first_sp
+        self.search_space = first_sp
         return raw_result
 
     
     
-    ### modify chemical names according to some heuristic rules
-    def modChemical(self, chemical):
-        modified_chemical = chemical
-        patterns = ['hcl', 'hydrochloride', 'dihydrohloride',
-        'chlorhydrate', 'salt', 'potassium', 'dihydrate',
-        'acid', 'oxid', 'chloride', 'alpha','beta', 'cis','trans','D-','L- ','d-','l-']
-        found_something = False
-        for pattern in patterns:
-            modified_chemical = re.sub(pattern, '', chemical)
-            if len(modified_chemical) < len(chemical):
-                found_something = True
-                break;
-        if not found_something:
-            modified_chemical = re.sub(r'\([^)]*\)', '', chemical)
-        return modified_chemical.strip()
 
 
     ### Method to parse queries from file
@@ -353,8 +147,8 @@ class SolrController:
                         line = line[0:-1]
                     l = line.split('\t')
                     entity_name = l[0]
-#		    print self.__input_type
-                    if self.__input_type.lower() == "names":
+#		    print self.input_type
+                    if self.input_type.lower() == "names":
                         entity_name = entity_name.lower()
                     if len(l) == 1:
                         self.query_dict[entity_name] = 'NA'
@@ -388,33 +182,6 @@ class SolrController:
         return previous_row[-1]
 
     
-    ### Method to submit a query for matching to Solr / Lucene
-    def __submitQuery(self, query, mode):
-        # get rid of non ascii characters
-        query = ''.join(c if ord(c) < 128 else '' for c in query)
-        # encode query in the format approriate for lucene
-        enc_query = ""
-        if mode == "name_approx":
-#            enc_query = urllib2.quote(mode + ':' + query + '~')
-            enc_query = urllib2.quote(mode + ':' + query + '~')
-        else:
-            enc_query = urllib2.quote(mode + ':\"' + query + '\"')
-	if mode == "name_approx":
-	    if query.isdigit():
-	        enc_query = urllib2.quote(mode + ':' + query)
-	        solr_query = ['curl', '-d', 'q=' + enc_query + '+OR+title%3A*' + query  + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://sam.embl.de:' + self.__solrInstance.start_port + '/solr/' + self.__search_space + '/select']
-	    else:
-	        solr_query = ['curl', '-d', 'q=' + enc_query + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://sam.embl.de:' + self.__solrInstance.start_port + '/solr/' + self.__search_space + '/select']
-	else:
-            solr_query = ['curl', '-d', 'q=' + enc_query + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://sam.embl.de:' + self.__solrInstance.start_port + '/solr/' + self.__search_space + '/select']
-        #print "Solr query (" + mode + ") : "
-        #if mode == "name_approx":
-        #    print solr_query
-        # submit query to Solr / Lucene
-        p = subprocess.Popen(solr_query, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = p.communicate()
-        # TODO look att err
-        return(out)
 
 
 
@@ -452,8 +219,8 @@ class SolrController:
             else:
                 limit = len(returned_docs) - 1
             chemm = ""
-            if self.__output_file_detail != "null":
-                with open(self.__output_file_detail, 'a') as fout:
+            if self.output_file_detail != "null":
+                with open(self.output_file_detail, 'a') as fout:
                     while i < limit:
                         cidfound = returned_docs[i]['title'][0]
                         namefound = returned_docs[i]['name']
@@ -484,7 +251,7 @@ class SolrController:
 		if match_type == "FUZZY_MATCH":
                     if prop >= thresholdL:
                         res = '%s%s\t%s\t%s\t%s\t%f\t%s\n' %(res, input, score, doc['title'][0], doc['name'], doc['score'], match_type)
-                        with open(self.__output_file_detail, 'a') as fout:
+                        with open(self.output_file_detail, 'a') as fout:
                             namefound = doc['name']
                             scorefound = 1 - Levenshtein.distance(str(input),str(namefound))/max(len(input),len(namefound))
                             if cc != input:
@@ -515,95 +282,6 @@ class SolrController:
             res = res + chemical_name + '\t' + doc['name'] + '\t' + doc['title'][0] + '\n'
         return(res)
 
-    ### Method to reduce the list of matches for chemical names to an optimal one per chemical
-    def __parseBestMatches(self):
-        if self.verbosity >= 4:
-            print('\nParsing best matches...\n')
-        results = self.results_exact.rstrip() + '\n' + self.results_fuzzy.rstrip() + '\n' + self.results_heuristic.rstrip()
-        results = results.split('\n')
-        results = [x for x in results if x != '']
-        # sort results before removeing (lower-scoring) duplicates
-        results = sorted(results)
-        names = []
-        user_scores = []
-        cids = []
-        matched_names = []
-        match_scores = []
-        match_types = []
-        prev_idx = 0
-        # list of best matches to be retained
-        best_matches = []
-        # append sentinel line to results to guarantee correct processing of the last actual entry
-        results.append('!!!!!SENTINEL!!!!!\tNA\tNA\tNA\tNA\tNA')
- #       print("PARSING BEST MATCHES")
-        for line in results:
-            elems = line.split('\t')
-            names.append(elems[0])
-            user_scores.append(elems[1])
-            cids.append(elems[2])
-            matched_names.append(elems[3])
-            curr_idx = len(names) - 1
-            if elems[5] == 'NA':
-                elems[5] = 'NO_MATCH'
-            match_types.append(elems[5])
-            if elems[4] == 'NA':
-                elems[4] = '0.0'
-            match_scores.append(float(elems[4]))
-            if self.verbosity >= 5:
-                print('curr_idx: ' + str(curr_idx))
-            if not names[prev_idx] == names[curr_idx] or names[curr_idx] == 'SENTINEL':
-                if self.verbosity >= 5:
-                    print(names[prev_idx] + ' != ' + names[curr_idx] + '  [prev: ' + str(prev_idx) + ' - curr:' + str(curr_idx) + ']')
-                if prev_idx + 1 == curr_idx:
-                    max_idx = prev_idx
-                else:
-#                    if self.verbosity >= 1:
-#                        print('\nresolving multiple matches:')
-#                        for i in range(prev_idx, curr_idx):
-#                            print('  '  + names[i] + ' (' + match_types[i] + ') -> ' + matched_names[i] + ': ' + str(match_scores[i]))
-                    # determine best scoring match for this chemical
-                    #print "DATASTRUCTURE:"
-                    #print match_scores  
-                    max_score = max(match_scores[prev_idx:curr_idx])
-                    max_idx = [i+prev_idx for i, j in enumerate(match_scores[prev_idx:curr_idx]) if j == max_score]
-                    # in case of multiple matches with optimal score, arbitrarily return the first of them
-                    max_idx = max_idx[0]
-                    #if self.verbosity >= 5:
-                    #    print('best match:')
-                    #    print(names[max_idx] + ' (' + match_types[max_idx] + ') -> ' + matched_names[max_idx] + ': ' + str(match_scores[max_idx]))
-                best_matches.append(max_idx)
-                if self.verbosity >= 5:
-                    print('max_idx: ' + str(max_idx) + '\n')
-                prev_idx = curr_idx
-
-        # return a reduced list of best matches with minimal column content
-        result = []
-        for i in best_matches:
-            # parse user scores and re-duplicate entries in the results that resulted from duplicate inputs
-            if user_scores[i] == 'NA':
-                us = ['NA']
-            else:
-                us = user_scores[i]
-                assert(us[0] == '[' and us[-1] == ']')
-                us = us[1:-1]
-                us = us.split(',')
-                us = [s.strip() for s in us]
-            for j in range(len(us)):
-                result.append('%s\t%s\t%s\t%s\t%s' %(cids[i], us[j], names[i], matched_names[i], match_types[i]))
-
-        # TODO perhaps restore the origial order of chemicals
-
-        if self.verbosity >= 1:
-            match_types = [match_types[i] for i in best_matches]
-            cnt_exact = match_types.count('EXACT_MATCH')
-            cnt_fuzzy = match_types.count('FUZZY_MATCH')
-            cnt_heur = match_types.count('HEURISTIC_MATCH')
-            cnt_all = len(match_types)
-            print '%i/%i (%.1f%%) exact matches' %(cnt_exact, cnt_all, 100.0*cnt_exact/cnt_all)
-            print '%i/%i (%.1f%%) fuzzy matches' %(cnt_fuzzy, cnt_all, 100.0*cnt_fuzzy/cnt_all)
-            print '%i/%i (%.1f%%) heuristic matches' %(cnt_heur, cnt_all, 100.0*cnt_heur/cnt_all)
-            print '%i/%i (%.1f%%) unmatched' %(cnt_all-cnt_exact-cnt_fuzzy-cnt_heur, cnt_all, 100.0*(cnt_all-cnt_exact-cnt_fuzzy-cnt_heur)/cnt_all)
-        return '\n'.join(result)
 
 
 
