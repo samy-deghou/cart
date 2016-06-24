@@ -13,6 +13,8 @@ import time
 import Levenshtein
 
 import ConfigParser
+from SolrInstance import SolrInstance
+
 reload(sys)
 sys.setdefaultencoding("utf-8")
 
@@ -21,8 +23,7 @@ class SolrController:
     ### Constructor
     def __init__(self, outputfiledetail, fuzzyThreshold, inputType='names', verbose=1, search_space='stitch20141111'):
         self.verbosity = verbose
-        self.__start_port = '34190'
-        self.__stop_port = '-1'
+        self.__solrInstance = SolrInstance()
         self.__input_type = inputType
         self.__fuzzyThreshold = fuzzyThreshold
         self.__output_file_detail = outputfiledetail
@@ -40,26 +41,26 @@ class SolrController:
         # get start and stop port of a running Solr instance if it exists
         solr_ports = self.__getSolrListeningPorts()
         if solr_ports:
-            self.__start_port = solr_ports['start_port']
-            self.__stop_port = solr_ports['stop_port']
+            self.__solrInstance.start_port = solr_ports['start_port']
+            self.__solrInstance.stop_port = solr_ports['stop_port']
         if solr_ports != None and self.verbosity >= 2:
-            print 'Solr start port ............... ' + self.__start_port
-            print 'Solr stop port ................ ' + self.__stop_port        
+            print 'Solr start port ............... ' + self.__solrInstance.start_port
+            print 'Solr stop port ................ ' + self.__solrInstance.stop_port        
 
         # attempt to restart the Solr Server
-        if not self.isSolrServerReady():
+        if not self.__solrInstance.isSolrServerReady():
             print 'Trying to (re-)start Solr Server...'
             self.restartSolrServer()
 
         # check whether search space is loaded and reload it if not
-        if not self.isIndexLoaded(self.__search_space):
+        if not self.__solrInstance.isIndexLoaded(self.__search_space):
             print 'Solr Server does not have index ' + self.__search_space + ' loaded\nTrying to reload index...'
             self.loadIndex(self.__search_space)
         elif self.verbosity >= 3:
             print 'Solr Server does already have index ' + self.__search_space + ' loaded'
 
         # die if Solr / Lucene could NOT be started correctly
-        if not (self.isSolrServerReady() and self.isIndexLoaded(self.__search_space)):
+        if not (self.__solrInstance.isSolrServerReady() and self.__solrInstance.isIndexLoaded(self.__search_space)):
             print 'Failed to establish connection to Solr Server.'
             print 'Exiting'
             exit(1)
@@ -81,21 +82,21 @@ class SolrController:
         self.__removeWriteLocks()
         # get free ports that can be used by Solr
         free_ports = self.__getFreePorts()
-        self.__start_port = str(free_ports[0])
-        self.__stop_port = str(free_ports[1])
-        #self.__start_port = str(8983)
-        #self.__stop_port = str(8888)
+        self.__solrInstance.start_port = str(free_ports[0])
+        self.__solrInstance.stop_port = str(free_ports[1])
+        #self.__solrInstance.start_port = str(8983)
+        #self.__solrInstance.stop_port = str(8888)
         
         if self.verbosity >= 2:
             print 'Re-initialized the Solr ports:'
-            print 'Solr start port       = ' + self.__start_port
-            print 'Solr stop port        = ' + self.__stop_port
+            print 'Solr start port       = ' + self.__solrInstance.start_port
+            print 'Solr stop port        = ' + self.__solrInstance.stop_port
         # start Solr
         solr_inst_dir = self.__SOLR_INSTALL_DIR + '/example'
         current_wd = os.getcwd()
         os.chdir(solr_inst_dir)
         # TODO: Error handling doesn't work due to the nohup/stream redirection
-        cmd = 'nohup %s -Djetty.port=%s -Xmx%s -DSTOP.PORT=%s -DSTOP.KEY=%s -jar start.jar > output.log 2>&1 &' %(self.__JRE_CMD, self.__start_port, self.__JRE_MEM, self.__stop_port, self.__STOP_KEY)
+        cmd = 'nohup %s -Djetty.port=%s -Xmx%s -DSTOP.PORT=%s -DSTOP.KEY=%s -jar start.jar > output.log 2>&1 &' %(self.__JRE_CMD, self.__solrInstance.start_port, self.__JRE_MEM, self.__solrInstance.stop_port, self.__STOP_KEY)
         if self.verbosity >= 2:
             print 'Starting Solr Server with the following command:\n  ' + cmd
         os.system(cmd)
@@ -137,53 +138,23 @@ class SolrController:
                 return False
 
 
-    ### Checks whether the Solr Server is running
-    def isSolrServerReady(self):
-        url = 'http://sam.embl.de:' + str(self.__start_port) + '/solr/#/'
-        try:
-            response = urllib2.urlopen(url)
-            return True
-        except URLError as e:
-            if self.verbosity >= 1:
-                print 'Solr Server (port: ' + str(self.__start_port) + ') does not respond / is not running'
-                print '  (' + str(e) + ')'
-            return False
 
-
-    ### Method to check if a search index (core) is loaded and thus ready to be queried
-    def isIndexLoaded(self, index):
-        if self.__start_port != '-1':
-            url = 'http://sam.embl.de:' + self.__start_port + '/solr/admin/cores?action=STATUS'
-            try:
-                response = urllib2.urlopen(url)
-                response_content = response.read()
-                indices = [m.start() for m in re.finditer('<lst name="status">', response_content)]
-                response_content_loaded_indices = response_content[indices[0]:]
-                return(index in response_content_loaded_indices)
-            except URLError as e:
-                if self.verbosity >= 1:
-                    print 'An error occurred when checking the status of index ' + index + ':\n  ' + url + '\n  (' + str(e) + ')'
-                return False
-        else:
-            if self.verbosity >= 1:
-                print 'An error occurred when checking the status of index ' + index + ':\n  (Solr Server does not seem to run)'
-            return False
 
 
     ### Method to load an index if it isn't loaded yet for the current Solr server
     def loadIndex(self, index):
-        if self.__start_port != '-1':
-            if not self.isIndexLoaded(index):
+        if self.__solrInstance.start_port != '-1':
+            if not self.__solrInstance.isIndexLoaded(index):
                 try:
-                    url = 'http://sam.embl.de:' + self.__start_port + '/solr/admin/cores?action=CREATE&name=' + index + '&config=solrconfig.xml&schema=schema.xml&dataDir=data'
+                    url = 'http://sam.embl.de:' + self.__solrInstance.start_port + '/solr/admin/cores?action=CREATE&name=' + index + '&config=solrconfig.xml&schema=schema.xml&dataDir=data'
                     if self.verbosity >= 2:
-                        print 'Trying to load ' + index + ' on port ' + self.__start_port + '\n  (url: ' + url + ')...'
+                        print 'Trying to load ' + index + ' on port ' + self.__solrInstance.start_port + '\n  (url: ' + url + ')...'
                     urllib2.urlopen(url)
                     if self.verbosity >= 2:
                         print 'Index ' + index + ' successfully loaded and ready to be queried'
                 except URLError as e:
                     if self.verbosity >= 1:
-                        print 'Failed to load the index ' + index + ' on port ' + self.__start_port
+                        print 'Failed to load the index ' + index + ' on port ' + self.__solrInstance.start_port
                         print '  (' + str(e) + ')'
                         print '  (potential issues: index name spelling, Solr ports, issues with building the Solr index)'
             else:
@@ -525,11 +496,11 @@ class SolrController:
 	if mode == "name_approx":
 	    if query.isdigit():
 	        enc_query = urllib2.quote(mode + ':' + query)
-	        solr_query = ['curl', '-d', 'q=' + enc_query + '+OR+title%3A*' + query  + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://sam.embl.de:' + self.__start_port + '/solr/' + self.__search_space + '/select']
+	        solr_query = ['curl', '-d', 'q=' + enc_query + '+OR+title%3A*' + query  + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://sam.embl.de:' + self.__solrInstance.start_port + '/solr/' + self.__search_space + '/select']
 	    else:
-	        solr_query = ['curl', '-d', 'q=' + enc_query + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://sam.embl.de:' + self.__start_port + '/solr/' + self.__search_space + '/select']
+	        solr_query = ['curl', '-d', 'q=' + enc_query + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://sam.embl.de:' + self.__solrInstance.start_port + '/solr/' + self.__search_space + '/select']
 	else:
-            solr_query = ['curl', '-d', 'q=' + enc_query + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://sam.embl.de:' + self.__start_port + '/solr/' + self.__search_space + '/select']
+            solr_query = ['curl', '-d', 'q=' + enc_query + '&fl=*,score&wt=json&defType=edismax&start=0&rows=200','http://sam.embl.de:' + self.__solrInstance.start_port + '/solr/' + self.__search_space + '/select']
         #print "Solr query (" + mode + ") : "
         #if mode == "name_approx":
         #    print solr_query
@@ -781,8 +752,8 @@ class SolrController:
     ### Auxiliary method to find the process ID of the Solr server with the corresponding listening ports
     def __getPidOfSolrProcess(self):
         solr_cmd = '-Djetty.port'
-        if self.__start_port != '-1':
-            solr_cmd = '-Djetty.port=' + self.__start_port
+        if self.__solrInstance.start_port != '-1':
+            solr_cmd = '-Djetty.port=' + self.__solrInstance.start_port
         else:
             if self.verbosity >= 2:
                 print 'Trying to attach to a running Solr server...'
