@@ -22,7 +22,7 @@ class TestNameMatching(unittest.TestCase):
         self.assertTrue(json_object['response']['numFound'] > 0)
 
 
-    def test_exact_matching(self):
+    def test_fuzzy_matching(self):
         sc = SolrController("",False)
         nmc = NameMatchingController()
         nmc.solrController = sc
