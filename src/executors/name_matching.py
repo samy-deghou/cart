@@ -1,7 +1,9 @@
-from solr_controller import SolrController
-
+import sys
+sys.path.append('solr')
 import argparse
 from time import time
+
+from solr_controller import SolrController
 
 
 def __main__():

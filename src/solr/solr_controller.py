@@ -798,7 +798,7 @@ class SolrController:
 
     ### Auxiliary method to read paramters from the config file
     def __readConfig(self):
-        cfg_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../conf/settings.cfg')
+        cfg_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../conf/settings.cfg')
         cfg = ConfigParser.ConfigParser()
         cfg.read(cfg_file)
         self.__STOP_KEY = cfg.get('solr', 'stop_key')
