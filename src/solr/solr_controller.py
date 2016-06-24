@@ -38,15 +38,6 @@ class SolrController:
             exit(1)
         self.__search_space = search_space
         
-        # get start and stop port of a running Solr instance if it exists
-        solr_ports = self.__getSolrListeningPorts()
-        if solr_ports:
-            self.__solrInstance.start_port = solr_ports['start_port']
-            self.__solrInstance.stop_port = solr_ports['stop_port']
-        if solr_ports != None and self.verbosity >= 2:
-            print 'Solr start port ............... ' + self.__solrInstance.start_port
-            print 'Solr stop port ................ ' + self.__solrInstance.stop_port        
-
         # attempt to restart the Solr Server
         if not self.__solrInstance.isSolrServerReady():
             print 'Trying to (re-)start Solr Server...'
@@ -76,91 +67,6 @@ class SolrController:
         self.results_synonyms = ''
 
 
-    ### Attempts to start a Solr Server
-    def startSolrServer(self):
-        # remove write lock files
-        self.__removeWriteLocks()
-        # get free ports that can be used by Solr
-        free_ports = self.__getFreePorts()
-        self.__solrInstance.start_port = str(free_ports[0])
-        self.__solrInstance.stop_port = str(free_ports[1])
-        #self.__solrInstance.start_port = str(8983)
-        #self.__solrInstance.stop_port = str(8888)
-        
-        if self.verbosity >= 2:
-            print 'Re-initialized the Solr ports:'
-            print 'Solr start port       = ' + self.__solrInstance.start_port
-            print 'Solr stop port        = ' + self.__solrInstance.stop_port
-        # start Solr
-        solr_inst_dir = self.__SOLR_INSTALL_DIR + '/example'
-        current_wd = os.getcwd()
-        os.chdir(solr_inst_dir)
-        # TODO: Error handling doesn't work due to the nohup/stream redirection
-        cmd = 'nohup %s -Djetty.port=%s -Xmx%s -DSTOP.PORT=%s -DSTOP.KEY=%s -jar start.jar > output.log 2>&1 &' %(self.__JRE_CMD, self.__solrInstance.start_port, self.__JRE_MEM, self.__solrInstance.stop_port, self.__STOP_KEY)
-        if self.verbosity >= 2:
-            print 'Starting Solr Server with the following command:\n  ' + cmd
-        os.system(cmd)
-        time.sleep(20)
-        os.chdir(current_wd)
-
-
-    ### Attempts to stop a running SolrServer
-    def stopSolrServer(self):
-        solr_pid = self.__getPidOfSolrProcess()
-        if solr_pid == -1:
-            if self.verbosity >= 1:
-                print 'Attempt to kill Solr server failed as Solr does not seem to run currently (no PID found!)'
-            return False
-        try:
-            if self.verbosity >= 1:
-                print 'Trying to kill Solr server with PID ' + str(solr_pid) + '...'
-            os.kill(solr_pid, signal.SIGKILL)
-            if self.verbosity >= 1:
-                print 'Successfully killed Solr process (PID = ' + str(solr_pid) + ')'
-            return True
-        except OSError as e:
-            if self.verbosity >= 1:
-                print 'Failed to kill Solr process (PID = ' + str(solr_pid) + ')'
-            return False
-
-
-    ### Checks whether a Solr server is running and if so tries to kill it, afterwards attempts to start a Solr server
-    def restartSolrServer(self):
-        solr_pid = self.__getPidOfSolrProcess()
-        if solr_pid == -1:
-            return self.startSolrServer()
-        else:
-            # start a new instance of Solr
-            is_solr_killed = self.stopSolrServer()
-            if is_solr_killed:
-                return self.startSolrServer()
-            else:
-                return False
-
-
-
-
-
-    ### Method to load an index if it isn't loaded yet for the current Solr server
-    def loadIndex(self, index):
-        if self.__solrInstance.start_port != '-1':
-            if not self.__solrInstance.isIndexLoaded(index):
-                try:
-                    url = 'http://sam.embl.de:' + self.__solrInstance.start_port + '/solr/admin/cores?action=CREATE&name=' + index + '&config=solrconfig.xml&schema=schema.xml&dataDir=data'
-                    if self.verbosity >= 2:
-                        print 'Trying to load ' + index + ' on port ' + self.__solrInstance.start_port + '\n  (url: ' + url + ')...'
-                    urllib2.urlopen(url)
-                    if self.verbosity >= 2:
-                        print 'Index ' + index + ' successfully loaded and ready to be queried'
-                except URLError as e:
-                    if self.verbosity >= 1:
-                        print 'Failed to load the index ' + index + ' on port ' + self.__solrInstance.start_port
-                        print '  (' + str(e) + ')'
-                        print '  (potential issues: index name spelling, Solr ports, issues with building the Solr index)'
-            else:
-                print 'Index ' + index + ' is already loaded'
-        else:
-            print 'Failed to load the index ' + index + ' because no Solr server seems to run (failed to get Solr lisntening ports)'
 
     ### utility function that that transform a cid to the convention CIDxxxxxxxx
     def standardizeCid(self,cid):
@@ -699,72 +605,6 @@ class SolrController:
             print '%i/%i (%.1f%%) unmatched' %(cnt_all-cnt_exact-cnt_fuzzy-cnt_heur, cnt_all, 100.0*(cnt_all-cnt_exact-cnt_fuzzy-cnt_heur)/cnt_all)
         return '\n'.join(result)
 
-    ### Auxiliary method to remove the Solr / Lucene lock file from Collection1 and all supported saerch indices
-    def __removeWriteLocks(self):
-        indices = self.__SUPP_INDICES[:]
-        indices.append('collection1')
-        for index in indices:
-            fn = self.__SOLR_INSTALL_DIR + '/example/solr/' + index + '/data/index/write.lock'
-            if os.path.isfile(fn):
-                try:
-                    retval = os.remove(fn)
-                    print 'Removing write locks return value: ' + str(retval)
-                    print 'Deleted file: ' + fn
-                except OSError:
-                    print 'Failed to remove write lock, file: ' + fn
-                    # return False if any delete attempt fails
-                    return False
-        # return True if all files that existed could also be deleted
-        return True
-
-
-    ### Auxiliary method to get two free ports which can be used as Solr start and stop ports
-    def __getFreePorts(self):
-        sock_start = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock_start.bind(('', 0))
-        start_port = sock_start.getsockname()[1]
-        sock_stop = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock_stop.bind(('', 0))
-        stop_port = sock_stop.getsockname()[1]
-        return([start_port, stop_port])
-
-
-    ### Auxiliary method to find a running Solr server and determine its listening (start and stop) ports
-    def __getSolrListeningPorts(self):
-        solr_pid = self.__getPidOfSolrProcess()
-        if solr_pid == -1:
-            if self.verbosity >= 1:
-                print 'Cannot get Solr listening ports because Solr does not appear to be running (no PID bound to it)'
-            return None
-        for proc in psutil.process_iter():
-            try:
-                pinfo = proc.as_dict(attrs=['pid','name','cmdline'])
-                if(pinfo['name'] == 'java') and (len(pinfo['cmdline']) == 7) and pinfo['cmdline'][1].startswith('-Djetty.port'):
-                    start_port = pinfo['cmdline'][1].split('=')[1]
-                    stop_port = pinfo['cmdline'][3].split('=')[1]
-                    return {'start_port' : start_port,
-                            'stop_port' : stop_port}
-            except psutil.NoSuchProcess:
-                print 'Cannot get Solr listening ports despite a PID bound to it'
-                return None
-
-
-    ### Auxiliary method to find the process ID of the Solr server with the corresponding listening ports
-    def __getPidOfSolrProcess(self):
-        solr_cmd = '-Djetty.port'
-        if self.__solrInstance.start_port != '-1':
-            solr_cmd = '-Djetty.port=' + self.__solrInstance.start_port
-        else:
-            if self.verbosity >= 2:
-                print 'Trying to attach to a running Solr server...'
-        for proc in psutil.process_iter():
-            try:
-                pinfo = proc.as_dict(attrs=['pid','name','cmdline'])
-                if(pinfo['name'] == 'java') and (len(pinfo['cmdline']) == 7) and pinfo['cmdline'][1].startswith(solr_cmd):
-                    return pinfo['pid']
-            except psutil.NoSuchProcess:
-                return -1
-        return -1
 
 
     ### Auxiliary method to read paramters from the config file
